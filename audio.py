@@ -25,12 +25,15 @@ def start_recording(sample_rate=44100, channels=2):
 
 def stop_recording(recording_name):
     global is_recording, recordings
-    is_recording = False
+    if is_recording:
+        is_recording = False
 
-    # Kaydı birleştir ve bellekte sakla
-    full_recording = np.concatenate(current_recording_data, axis=0)
-    recordings[recording_name] = full_recording
-    print(f"Kayıt '{recording_name}' başarıyla belleğe alındı.")
+        # Kaydı birleştir ve bellekte sakla
+        full_recording = np.concatenate(current_recording_data, axis=0)
+        recordings[recording_name] = full_recording
+        print(f"Kayıt '{recording_name}' başarıyla belleğe alındı.")
+    else:
+        print("Kayıtta değil.")
 
 def play_recording(recording_name, sample_rate=44100):
     if recording_name in recordings:
