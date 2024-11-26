@@ -1,2 +1,6 @@
 pygame
 pydub
+scipy
+sounddevice
+threading
+numpy

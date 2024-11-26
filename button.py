@@ -1,11 +1,10 @@
 import pygame
 
-class Button:
-    def __init__(self, x, y, image, win, text=None) -> None:
+class ImageButton:
+    def __init__(self, x, y, image, win):
         self.coordinates = x, y
         self.image = image
         self.win = win
-        self.text = text
         self.rect = pygame.Rect(x, y, self.image.get_width(), self.image.get_height())
     
     def draw(self):
@@ -13,3 +12,30 @@ class Button:
     
     def isClicked(self, mouse_pos):
         return self.rect.collidepoint(mouse_pos)
+
+class Button:
+    def __init__(self, x, y, width, height, win, text=None, font_size=30, color="black", text_color="white"):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.win = win
+        self.text = text
+        self.font = pygame.font.Font(None, font_size)
+        self.color = color
+        self.text_color = text_color
+        self.active = False
+
+    def draw(self):
+        if self.text != None:
+            pygame.draw.rect(self.win, self.color, self.rect)
+            text_surface = self.font.render(self.text, True, self.text_color)
+            text_rect = text_surface.get_rect(center = self.rect.center)
+            self.win.blit(text_surface, text_rect)
+    
+    def isClicked(self, mouse_pos):
+        return self.rect.collidepoint(mouse_pos)
+
+    def setColor(self, color):
+        self.color = color
+    
+    def setActive(self, active):
+        self.active = active
+        self.color = "grey" if active else "black"
