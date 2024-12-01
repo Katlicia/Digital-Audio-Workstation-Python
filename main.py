@@ -1,41 +1,47 @@
 import pygame
-from button import *
+from button import Button, ImageButton
 from config import *
-from audio import *
+from timeline import Timeline
+import sounddevice as sd
+import numpy as np
+
 
 pygame.init()
 
 win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("Digital Audio Workstation")
 
-clock = pygame.time.Clock()
-running = True
+def audio_playback_callback(outdata, frames, time, status):
+    """
+    Çalma sırasında ses akışı için callback fonksiyonu.
+    """
+    global playing_audio, current_audio_position, volume_level
 
-######################
+    if playing_audio is not None:
+        # Çalınacak sesin pozisyonunu hesapla
+        end_position = current_audio_position + frames
+        audio_chunk = playing_audio[current_audio_position:end_position]
 
-# Track bilgileri
-tracks = [None] * 10  # Maksimum 10 track
-track_height = 50
-track_spacing = 10
-track_start_y = 50
-selected_track = None
-recording = False
-current_track = None
+        # Ses seviyesi uygula
+        audio_chunk = audio_chunk * volume_level
 
-# Ses kaydetme ve çalma değişkenleri
-sample_rate = 44100
-current_audio = None
+        # Ses verisini doğru şekle dönüştür (mono için)
+        if len(audio_chunk.shape) == 1:
+            audio_chunk = audio_chunk[:, np.newaxis]  # Tek kanallı ses için (num_frames, 1)
 
-# Butonlar
-recordButton = Button(50, 10, 100, 30, win, "Record", font_size=20, color=(135, 206, 250))
-playButton = Button(200, 10, 100, 30, win, "Play", font_size=20, color=(100, 149, 237))
-stopButton = Button(350, 10, 100, 30, win, "Stop", font_size=20, color=(255, 0, 0))
-playAllButton = Button(550, 10, 100, 30, win, "Play All", font_size=20, color=(255, 0, 0))
+        # Akışa yaz
+        if len(audio_chunk) < frames:
+            outdata[:len(audio_chunk)] = audio_chunk
+            outdata[len(audio_chunk):] = 0  # Kalan kısmı sıfırla
+            playing_audio = None  # Sesin sonuna ulaşıldı
+        else:
+            outdata[:] = audio_chunk
+
+        current_audio_position = end_position
+    else:
+        outdata.fill(0)  # Çalınacak ses yoksa sessizlik gönder
 
 def find_next_empty_track():
-    """
-    Boş olan ilk track'i bulur.
-    """
     for i in range(len(tracks)):
         if tracks[i] is None:
             return i
@@ -43,9 +49,6 @@ def find_next_empty_track():
 
 
 def draw_tracks(win, tracks, selected_track):
-    """
-    Track'leri ekrana çizer.
-    """
     for i, track in enumerate(tracks):
         y = track_start_y + i * (track_height + track_spacing)
         color = (135, 206, 250) if i == selected_track else (59, 59, 59)
@@ -59,9 +62,6 @@ def draw_tracks(win, tracks, selected_track):
 
 
 def start_recording():
-    """
-    Kayıt işlemini başlatır.
-    """
     global recording, current_audio, current_track
     next_track = find_next_empty_track()
     if next_track is not None:
@@ -71,21 +71,18 @@ def start_recording():
 
 
 def stop_recording():
-    """
-    Kayıt işlemini durdurur.
-    """
     global recording, current_audio, tracks
     if recording:
         # Ses verisini numpy array'e dönüştür
         audio_data = np.concatenate(current_audio, axis=0)
         tracks[current_track] = audio_data  # Track'e ses verisini kaydet
         recording = False
+    else:
+        recording = False
+        return
 
 
 def audio_callback(indata, frames, time, status):
-    """
-    Ses kaydı sırasında çağrılan callback.
-    """
     if recording:
         current_audio.append(indata.copy())  # Alınan sesi listeye ekle
 
@@ -94,66 +91,61 @@ def play_selected_track():
     """
     Seçili track'i çalar.
     """
+    global playing_audio, current_audio_position, stream
     if selected_track is not None and tracks[selected_track] is not None:
-        sd.play(tracks[selected_track], samplerate=sample_rate)
+        playing_audio = tracks[selected_track]
+        current_audio_position = 0
+
+        # Akışı başlat
+        if stream is not None:
+            stream.close()
+        stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
+        stream.start()
 
 
 def stop_playing():
-    """
-    Çalan tüm sesleri durdurur.
-    """
-    sd.stop()
+    global playing_audio, stream
+    playing_audio = None
+    if stream is not None:
+        stream.stop()
+        stream.close()
+        stream = None
 
 def play_all_tracks():
     """
     Tüm track'leri aynı anda çalar.
     """
-    if any(track is not None for track in tracks):  # En az bir track doluysa
-        # En uzun track'in uzunluğunu bul
+    global playing_audio, current_audio_position, stream
+    if any(track is not None for track in tracks):
         max_length = max(len(track) for track in tracks if track is not None)
-        
-        # Track'leri hizala ve karıştır
         mixed_audio = np.zeros(max_length, dtype=np.float32)
+
         for track in tracks:
             if track is not None:
-                # Track'in mono olup olmadığını kontrol et
-                if len(track.shape) > 1:  # Stereo ise
-                    track = np.mean(track, axis=1)  # Kanalları birleştirerek mono'ya çevir
-                padded_track = np.pad(track, (0, max_length - len(track)), 'constant')  # Kısa track'leri doldur
-                mixed_audio[:len(padded_track)] += padded_track  # Toplama işlemi
+                if len(track.shape) > 1:
+                    track = np.mean(track, axis=1)
+                padded_track = np.pad(track, (0, max_length - len(track)), 'constant')
+                mixed_audio += padded_track
 
-        # Karışımı normalize et (aşırı yüksek sesleri engellemek için)
-        max_val = np.max(np.abs(mixed_audio))  # En yüksek ses değeri
-        if max_val > 0:  # Bölme hatalarını önlemek için kontrol
-            mixed_audio /= max_val
+        mixed_audio /= np.max(np.abs(mixed_audio))  # Normalize et
+        playing_audio = mixed_audio
+        current_audio_position = 0
 
-        # Tüm track'leri çal
-        sd.play(mixed_audio, samplerate=sample_rate)
+        # Akışı başlat
+        if stream is not None:
+            stream.close()
+        stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
+        stream.start()
 
 
-
-# SoundDevice ile ses akışı oluştur
-stream = sd.InputStream(callback=audio_callback, channels=1, samplerate=sample_rate)
-stream.start()
-
-######################
-
-MenuButtonList = [
-    # FileButton
-    Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, "FILE", menu_button_font_size, dark_grey),
-    # EditButton
-    Button(menu_button_start_pos_x+menu_button_width, menu_button_y_pos, menu_button_width, menu_button_height, win, "EDIT", menu_button_font_size, dark_grey),
-    # SaveButton 
-    Button(menu_button_start_pos_x+menu_button_width*2, menu_button_y_pos, menu_button_width, menu_button_height, win, "SAVE", menu_button_font_size, dark_grey),
-    # ThemeButton
-    Button(menu_button_start_pos_x+menu_button_width*3, menu_button_y_pos, menu_button_width+5, menu_button_height, win, "THEME", menu_button_font_size, dark_grey)
-]
-
-# recordButton = Button(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 100, 100, win, "Record")
-# stopButton = Button(SCREEN_WIDTH / 2 + 200, SCREEN_HEIGHT / 2, 100, 100, win, "Stop")
-
-# playButton = Button(100, 100, 100, 100, win, "Play")
-# exportButton = Button(300, 100, 100, 100, win, "Export")
+def adjust_volume(change):
+    """
+    Ses seviyesini artırır veya azaltır.
+    Args:
+        change (float): Ses seviyesi değişikliği (+ veya -).
+    """
+    global volume_level
+    volume_level = max(0.0, min(1.50, volume_level + change))  # 0.0 ile 1.0 arasında sınırla
 
 def draw_recording_list(win, recordings):
     font = pygame.font.Font(None, 36)
@@ -164,6 +156,60 @@ def draw_recording_list(win, recordings):
         y += 40
 
 
+clock = pygame.time.Clock()
+running = True
+
+# Track Info
+tracks = [None] * 10  # Max 10 Track
+track_height = 50
+track_spacing = 10
+track_start_y = 50
+selected_track = None
+recording = False
+current_track = None
+
+
+
+# Ses akışı için değişkenler
+playing_audio = None
+current_audio_position = 0
+stream = None
+
+# Audio save and play variables
+sample_rate = 44100
+current_audio = None
+
+# Create audio stream with SoundDevice
+stream = sd.InputStream(callback=audio_callback, channels=1, samplerate=sample_rate)
+stream.start()
+
+# Ses seviyesi değişkeni
+volume_level = 1.0  # Başlangıç seviyesi (tam ses)
+
+# Ses seviyesi butonları
+volumeUpButton = Button(650, 10, 40, 25, win, "+")
+volumeDownButton = Button(700, 10, 40, 25, win, "-")
+
+MenuButtonList = [
+    # FileButton
+    Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, "FILE", menu_button_font_size, grey),
+    # EditButton
+    Button(menu_button_start_pos_x+menu_button_width, menu_button_y_pos, menu_button_width, menu_button_height, win, "EDIT", menu_button_font_size, grey),
+    # SaveButton 
+    Button(menu_button_start_pos_x+menu_button_width*2, menu_button_y_pos, menu_button_width, menu_button_height, win, "SAVE", menu_button_font_size, grey),
+    # ThemeButton
+    Button(menu_button_start_pos_x+menu_button_width*3, menu_button_y_pos, menu_button_width+5, menu_button_height, win, "THEME", menu_button_font_size, grey)
+]
+
+
+recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.png", win)
+playButton = ImageButton(play_button_x, menu_button_y_pos, "images/play.png", win)
+stopButton = ImageButton(stop_button_x, menu_button_y_pos, "images/pause.png", win)
+resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png", win)
+
+timeline = Timeline()
+
+
 while running:
     x, y = win.get_size()
 
@@ -172,41 +218,34 @@ while running:
             running = False
         pos = pygame.mouse.get_pos()
         
-        ######################
+        if event.type == pygame.MOUSEWHEEL:
+            timeline.handleScroll(event)  # Sadece timeline'ı kaydır
+
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if recordButton.isClicked(pos):
                 if recording:
                     stop_recording()
+                    recordButton.setImage("images/record.png")
                 else:
                     start_recording()
+                    recordButton.setImage("images/recording.png")
 
             if playButton.isClicked(pos):
                 play_selected_track()
 
             if stopButton.isClicked(pos):
                 stop_playing()
-            
-            if playAllButton.isClicked(pos):
-                play_all_tracks()
 
-            # Track'e tıklama
             for i in range(len(tracks)):
                 y = track_start_y + i * (track_height + track_spacing)
                 if y <= pos[1] <= y + track_height:
                     selected_track = i  # Seçili track'i güncelle
-        ######################
 
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     pos = pygame.mouse.get_pos()
-        #     if recordButton.isClicked(pos):
-        #         start_recording()
-        #     if stopButton.isClicked(pos):
-        #         stop_recording("sound1")
-        #     if playButton.isClicked(pos):
-        #         play_recording("sound1")
-        #     if exportButton.isClicked(pos):
-        #         export_recording("sound1", "sound1.wav")
-
+            if volumeUpButton.isClicked(pos):
+                adjust_volume(0.1)  # %10 artır
+            if volumeDownButton.isClicked(pos):
+                adjust_volume(-0.1)  # %10 azalt
 
     win.fill("grey")
     pygame.draw.rect(win, light_blue, pygame.Rect(0, 0, x, 40))
@@ -217,23 +256,35 @@ while running:
         MenuButton.isClicked(pos)
         width += MenuButton.width
 
-    pygame.draw.rect(win, (59, 59, 59), pygame.Rect(5, 7.5, width + 2.5, 25), 2)
-
-    # Track'leri çiz
-    draw_tracks(win, tracks, selected_track)
-
-    # Düğmeleri çiz
     recordButton.draw()
     playButton.draw()
+    if playButton.isClicked(pos):
+        playButton.setImage("images/onplay.png") 
+    else:
+        playButton.setImage("images/play.png")
     stopButton.draw()
-    playAllButton.draw()
+    if stopButton.isClicked(pos):
+        stopButton.setImage("images/onpause.png")
+    else:
+        stopButton.setImage("images/pause.png")
+    resetButton.draw()
+    if resetButton.isClicked(pos):
+        resetButton.setImage("images/onreset.png")
+    else:
+        resetButton.setImage("images/reset.png")
 
-    # recordButton.draw()
-    # stopButton.draw()
-    # playButton.draw()
-    # exportButton.draw()
-    # draw_recording_list(win, recordings)
-    
+    menuFrameRect = pygame.Rect(menu_button_start_pos_x, menu_button_y_pos, width + 2.5, menu_button_height)
+    pygame.draw.rect(win, dark_grey, menuFrameRect, gui_line_border)
+    controlFrameRect = pygame.Rect(play_button_x, menu_button_y_pos, 25 * 3 - 1, menu_button_height)
+    pygame.draw.rect(win, dark_grey, controlFrameRect, gui_line_border)
+    # timelineFrameRect = pygame.Rect(width + 2.5, 100, x, y-100)
+    # pygame.draw.rect(win, dark_grey, timelineFrameRect, gui_line_border+1)
+    timelineFrameRect = pygame.Rect(width + 2.5, 100, x, 3000)  # Sabit değerlerle tanımla
+    pygame.draw.rect(win, dark_grey, timelineFrameRect, gui_line_border + 1)
+    timeline.drawTimeline(win, width + 5, 100+3, x, 3000)
+
+    volumeUpButton.draw()
+    volumeDownButton.draw()
 
     pygame.display.update()
     
