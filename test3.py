@@ -1,7 +1,7 @@
 import pygame
 from button import Button, ImageButton
 from config import *
-from timeline import Timeline
+from timeline2 import Timeline
 import sounddevice as sd
 import numpy as np
 
@@ -71,15 +71,30 @@ def start_recording():
 
 
 def stop_recording():
-    global recording, current_audio, tracks
+    global recording, current_audio, tracks, timeline
+
     if recording:
-        # Ses verisini numpy array'e dönüştür
-        audio_data = np.concatenate(current_audio, axis=0)
-        tracks[current_track] = audio_data  # Track'e ses verisini kaydet
+        if current_audio:  # Liste boş değilse işlemi yap
+            # Ses verisini numpy array'e dönüştür
+            audio_data = np.concatenate(current_audio, axis=0)
+
+            # Track'e ses verisini kaydet
+            tracks[current_track] = audio_data
+
+            # Track süresini hesapla (saniye)
+            track_duration = len(audio_data) / sample_rate
+
+            # Timeline üzerinde gösterilecek uzunluğu hesapla
+            track_pixel_width = track_duration * timeline.unit_width
+
+            # Timeline'a track ekle
+            timeline.addTrack(current_track, track_pixel_width)
+        else:
+            print("Kaydedilecek ses verisi yok.")
+
         recording = False
-    else:
-        recording = False
-        return
+
+
 
 
 def audio_callback(indata, frames, time, status):
@@ -218,9 +233,7 @@ while running:
             running = False
         pos = pygame.mouse.get_pos()
         
-        if event.type == pygame.MOUSEWHEEL:
-            timeline.handleScroll(event)  # Sadece timeline'ı kaydır
-
+        timeline.handleScroll(event)  # Sadece timeline'ı kaydır
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if recordButton.isClicked(pos):
@@ -256,6 +269,8 @@ while running:
         MenuButton.isClicked(pos)
         width += MenuButton.width
 
+    timeline.handleKeyboard()
+
     recordButton.draw()
     playButton.draw()
     if playButton.isClicked(pos):
@@ -277,10 +292,11 @@ while running:
     pygame.draw.rect(win, dark_grey, menuFrameRect, gui_line_border)
     controlFrameRect = pygame.Rect(play_button_x, menu_button_y_pos, 25 * 3 - 1, menu_button_height)
     pygame.draw.rect(win, dark_grey, controlFrameRect, gui_line_border)
-    timelineFrameRect = pygame.Rect(width + 2.5, 100, x, 3000)  # Sabit değerlerle tanımla
+    timelineFrameRect = pygame.Rect(width + 2.5, 67, x, 507)  # Sabit değerlerle tanımla
     pygame.draw.rect(win, dark_grey, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, width + 5, 100+3, x, 3000)
-
+    timeline.drawTimeline(win, width + 5, 70, x, 500)
+    timeline.drawTracks(win, width + 5, 70)
+    timeline.drawCursor(win, width + 5, 70, 500)
     volumeUpButton.draw()
     volumeDownButton.draw()
 
