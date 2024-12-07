@@ -44,17 +44,14 @@ class Timeline:
                 font = pygame.font.Font(None, 24)
                 text = font.render(str(col // self.unit_width + 1), True, dark_grey)
                 win.blit(text, (pos_x + 2, y - 20))  # Sütun numaraları üstte gösterilir.
-        
+
         self.drawTrackLines(win, x, y, width)
 
     def drawCursor(self, win, x, y, height):
         """
-        İmleci çiz.
+        İmleci (cursor) çizer.
         """
-        # İmlecin pozisyonunu sol başlık ofsetiyle birlikte ayarla
         pos_x = self.cursor_x - self.offset_x + x + self.unit_width * 2
-        
-        # İmleç çiziminin ekran içinde kalmasını sağla
         if pos_x >= x + self.unit_width * 2:
             pygame.draw.line(win, red, (pos_x, y), (pos_x, y + height), 2)
 
@@ -132,13 +129,8 @@ class Timeline:
     def drawTrackLines(self, win, x, y, width):
         """
         Track'lerin arasına yatay çizgiler çizer.
-        Args:
-            win: Pencere yüzeyi.
-            x: Başlangıç X pozisyonu.
-            y: Başlangıç Y pozisyonu.
-            width: Çizim genişliği.
         """
-        line_color = dark_grey  # Çizgi rengi
+        line_color = dark_grey
         for row in range(self.track_count + 1):  # Track sayısına göre çizgiler
-            line_y = y + row * self.track_height  # Çizgi pozisyonu
+            line_y = y + row * self.track_height
             pygame.draw.line(win, line_color, (x, line_y), (x + width + self.unit_width * 2, line_y), 1)

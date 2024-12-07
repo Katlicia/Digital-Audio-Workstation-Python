@@ -1,7 +1,7 @@
 import pygame
 from button import Button, ImageButton
 from config import *
-from timeline2 import Timeline
+from timeline3 import Timeline
 import sounddevice as sd
 import numpy as np
 
@@ -48,37 +48,41 @@ def find_next_empty_track():
     return None
 
 def start_recording():
-    global recording, current_audio, current_track
+    global recording, current_audio, current_track, cursor_seconds
     next_track = find_next_empty_track()
     if next_track is not None:
         recording = True
         current_track = next_track
-        current_audio = []  # Yeni ses verisi için liste oluştur
+        current_audio = []  # New list for audio data
+
+        # Calculate the starting position in samples based on cursor position
+        start_sample = int(cursor_seconds * sample_rate)
+        current_audio_position = start_sample  # Set the current position based on the cursor's position
+
 
 
 def stop_recording():
     global recording, current_audio, tracks, timeline
 
     if recording:
-        if current_audio:  # Liste boş değilse işlemi yap
-            # Ses verisini numpy array'e dönüştür
+        if current_audio:  # If there's audio data to save
+            # Concatenate audio chunks into a single numpy array
             audio_data = np.concatenate(current_audio, axis=0)
 
-            # Track'e ses verisini kaydet
+            # Store the track at the appropriate index
             tracks[current_track] = audio_data
 
-            # Track süresini hesapla (saniye)
+            # Calculate the track duration
             track_duration = len(audio_data) / sample_rate
+            track_pixel_width = track_duration * timeline.unit_width  # Convert to pixels
 
-            # Timeline üzerinde gösterilecek uzunluğu hesapla
-            track_pixel_width = track_duration * timeline.unit_width
-
-            # Timeline'a track ekle
-            timeline.addTrack(current_track, track_pixel_width)
+            # Add track to the timeline, with position based on cursor position
+            timeline.addTrack(current_track, track_pixel_width, start_time=cursor_seconds)
         else:
-            print("Kaydedilecek ses verisi yok.")
+            print("No audio data recorded.")
 
         recording = False
+
 
 
 
@@ -285,7 +289,7 @@ while running:
     timeline.drawCursor(win, width + 5, 70, 500)
     volumeUpButton.draw()
     volumeDownButton.draw()
-
+    cursor_seconds = timeline.cursor_x / timeline.unit_width
     pygame.display.update()
     
 pygame.quit()
