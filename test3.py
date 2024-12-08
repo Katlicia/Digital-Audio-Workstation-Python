@@ -1,7 +1,7 @@
 import pygame
 from button import Button, ImageButton
 from config import *
-from timeline2 import Timeline
+from timeline3 import Timeline
 import sounddevice as sd
 import numpy as np
 

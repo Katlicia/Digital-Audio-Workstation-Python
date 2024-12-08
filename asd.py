@@ -1,37 +1,65 @@
 import pygame
+import fluidsynth
 
-# Pygame başlatma
+# Pygame ve FluidSynth başlat
 pygame.init()
+pygame.mixer.init()
 
-# Ana ekran yüzeyi oluştur
-screen = pygame.display.set_mode((800, 600))
+# Ekran Ayarları
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("DAW - SoundFont Desteği")
 
-# Küçük surface oluştur (200x100)
-small_surface = pygame.Surface((200, 100))
-small_surface.fill((150, 150, 255))  # Küçük surface'i mavi renkle dolduralım
+# Renkler
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
-# Rect oluştur (50x50 boyutlarında)
-rect = pygame.Rect(0, 0, 50, 50)  # Rect'i küçük surface'in sol üst köşesine yerleştiriyoruz
+# SoundFont Yükle
+sf2_file = "example.sf2"  # SoundFont dosyanızın yolu
+fs = fluidsynth.Synth()
+fs.start(driver="dsound")  # Platforma özel sürücü ayarı
+sfid = fs.sfload(sf2_file)
+fs.program_select(0, sfid, 0, 0)
 
-# Ana oyun döngüsü
+# Oynatma Çubuğu
+playhead_x = 0
+clock = pygame.time.Clock()
+
 running = True
+playing = False
+
 while running:
+    screen.fill(WHITE)
+
+    # Olayları İşleme
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                playing = not playing
+                if playing:
+                    # Bir nota çal (Orta Do - C4)
+                    fs.noteon(0, 60, 100)
+                else:
+                    fs.noteoff(0, 60)
 
-    # Ekranı temizle
-    screen.fill((0, 0, 0))
+    # Zaman Çizelgesini Çiz
+    pygame.draw.rect(screen, BLACK, (0, HEIGHT // 2, WIDTH, 5))
 
-    # Küçük surface'i ana ekrana yerleştir (ana ekranın ortasında)
-    small_surface_rect = small_surface.get_rect(center=(400, 300))  # Ana ekranın ortasında
-    screen.blit(small_surface, small_surface_rect)
+    # Oynatma Çubuğu Çiz
+    if playing:
+        playhead_x += 2  # Oynatma hızı
+        if playhead_x > WIDTH:
+            playhead_x = 0
+            playing = False
 
-    # Rect'i küçük surface üzerinde çiz
-    pygame.draw.rect(small_surface, (255, 0, 0), rect)  # Rect'i kırmızı yapalım
+    pygame.draw.line(screen, RED, (playhead_x, 0), (playhead_x, HEIGHT), 2)
 
-    # Ekranı güncelle
+    # Ekranı Güncelle
     pygame.display.flip()
+    clock.tick(60)
 
-# Pygame'i kapatma
+fs.delete()
 pygame.quit()

@@ -1,10 +1,9 @@
 import pygame
 from button import Button, ImageButton
 from config import *
-from timeline import Timeline
+from newtimeline import Timeline
 import sounddevice as sd
 import numpy as np
-
 
 pygame.init()
 
@@ -159,6 +158,8 @@ def draw_recording_list(win, recordings):
 clock = pygame.time.Clock()
 running = True
 
+font = pygame.font.SysFont("Arial", 24)
+
 # Track Info
 tracks = [None] * 10  # Max 10 Track
 track_height = 50
@@ -209,7 +210,6 @@ resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png",
 
 timeline = Timeline()
 
-
 while running:
     x, y = win.get_size()
 
@@ -218,9 +218,8 @@ while running:
             running = False
         pos = pygame.mouse.get_pos()
         
-        if event.type == pygame.MOUSEWHEEL:
-            timeline.handleScroll(event)  # Sadece timeline'ı kaydır
-
+        timeline.handleScroll(event)  # Sadece timeline'ı kaydır
+        #timeline.handleZoom(event)    
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if recordButton.isClicked(pos):
@@ -275,11 +274,18 @@ while running:
 
     menuFrameRect = pygame.Rect(menu_button_start_pos_x, menu_button_y_pos, width + 2.5, menu_button_height)
     pygame.draw.rect(win, dark_grey, menuFrameRect, gui_line_border)
+    
     controlFrameRect = pygame.Rect(play_button_x, menu_button_y_pos, 25 * 3 - 1, menu_button_height)
     pygame.draw.rect(win, dark_grey, controlFrameRect, gui_line_border)
-    timelineFrameRect = pygame.Rect(width + 2.5, 100, x, 3000)  # Sabit değerlerle tanımla
+    
+    timelineFrameRect = pygame.Rect(0.5, 40, x, 599)  # Sabit değerlerle tanımla
     pygame.draw.rect(win, dark_grey, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, width + 5, 100+3, x, 3000)
+    timeline.drawTimeline(win, width + 5, 40+3, x, 593, tracks, sample_rate)
+
+    trackFrameLine = pygame.draw.line(win, dark_grey, (0.5, 69), (300, 69))
+    text = font.render("Tracks", True, dark_grey)
+    text_rect = text.get_rect(center=(85, 55))
+    win.blit(text, text_rect)
 
     volumeUpButton.draw()
     volumeDownButton.draw()

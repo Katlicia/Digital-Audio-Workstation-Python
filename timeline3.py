@@ -120,6 +120,7 @@ class Timeline:
             x_start: Çizimin başlangıç X pozisyonu.
             y_start: Çizimin başlangıç Y pozisyonu.
         """
+        self.autoExtendTimeline(win)
         track_y_offset = 50  # Track'ler arası mesafe
         for track_id, width in self.tracks.items():
             # Her track'in pozisyonu
