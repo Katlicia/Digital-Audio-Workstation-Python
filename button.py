@@ -37,6 +37,13 @@ class Button:
             text_rect = text_surface.get_rect(center = self.rect.center)
             self.win.blit(text_surface, text_rect)
     
+    def drawLeft(self):
+        pygame.draw.rect(self.win, self.color, self.rect)
+        if self.text != None:
+            text_surface = self.font.render(self.text, True, self.text_color)
+            text_rect = text_surface.get_rect(topleft = self.rect.topleft)
+            self.win.blit(text_surface, text_rect)
+
     def isClicked(self, mouse_pos):
         if self.rect.collidepoint(mouse_pos):
             self.color = (34, 34, 34)

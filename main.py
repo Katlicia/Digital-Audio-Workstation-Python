@@ -40,6 +40,7 @@ def audio_playback_callback(outdata, frames, time, status):
     else:
         outdata.fill(0)  # Çalınacak ses yoksa sessizlik gönder
 
+
 def find_next_empty_track():
     for i in range(len(tracks)):
         if tracks[i] is None:
@@ -110,6 +111,7 @@ def stop_playing():
         stream.close()
         stream = None
 
+
 def play_all_tracks():
     """
     Tüm track'leri aynı anda çalar.
@@ -145,6 +147,7 @@ def adjust_volume(change):
     """
     global volume_level
     volume_level = max(0.0, min(1.50, volume_level + change))  # 0.0 ile 1.0 arasında sınırla
+
 
 def draw_recording_list(win, recordings):
     font = pygame.font.Font(None, 36)
@@ -207,6 +210,29 @@ recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.pn
 playButton = ImageButton(play_button_x, menu_button_y_pos, "images/play.png", win)
 stopButton = ImageButton(stop_button_x, menu_button_y_pos, "images/pause.png", win)
 resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png", win)
+
+TrackRectList = [
+    Button(3, 70, 167, 56, win, "Track 1", 15, "white", "black"),
+    # pygame.Rect(3, 70, 167, 56),
+    Button(3, 127, 167, 56, win, "Track 2", 15, "white", "black"),
+    # pygame.Rect(3, 127, 167, 56),
+    Button(3, 184, 167, 56, win, "Track 3", 15, "white", "black"),
+    # pygame.Rect(3, 184, 167, 56),
+    Button(3, 241, 167, 56, win, "Track 4", 15, "white", "black"),
+    # pygame.Rect(3, 241, 167, 56),
+    Button(3, 298, 167, 56, win, "Track 5", 15, "white", "black"),
+    # pygame.Rect(3, 298, 167, 56),
+    Button(3, 355, 167, 56, win, "Track 6", 15, "white", "black"),
+    # pygame.Rect(3, 355, 167, 56),
+    Button(3, 412, 167, 56, win, "Track 7", 15, "white", "black"),
+    # pygame.Rect(3, 412, 167, 56),
+    Button(3, 469, 167, 56, win, "Track 8", 15, "white", "black"),
+    # pygame.Rect(3, 469, 167, 56),
+    Button(3, 526, 167, 56, win, "Track 9", 15, "white", "black"),
+    # pygame.Rect(3, 526, 167, 56),
+    Button(3, 583, 167, 53, win, "Track 10", 15, "white", "black")
+    # pygame.Rect(3, 583, 167, 53)
+]
 
 timeline = Timeline()
 
@@ -286,6 +312,12 @@ while running:
     text = font.render("Tracks", True, dark_grey)
     text_rect = text.get_rect(center=(85, 55))
     win.blit(text, text_rect)
+
+    for i in range(1, 10):
+        pygame.draw.line(win, dark_grey, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
+
+    for i in TrackRectList:
+        i.drawLeft()
 
     volumeUpButton.draw()
     volumeDownButton.draw()

@@ -60,10 +60,6 @@ class Timeline:
                     timeline_surface, (100, 149, 237), 
                     (track_x_start + 1, track_y+1, track_width, self.track_height)
                 )
-
-                # Track numarasını yaz
-                text = font.render(f"Track {i + 1}", True, "white")
-                timeline_surface.blit(text, (track_x_start + 5, track_y + 5))
                 
             # Her track'in altına yatay çizgi ekle
             if i < len(tracks) - 1:  # Son track için çizgi çizme
@@ -78,7 +74,7 @@ class Timeline:
                 pygame.draw.line(timeline_surface, dark_grey, (0, 26), (pos_x + 300, 26)) 
                 # Sütun üzerindeki zamanı yaz
                 text = font.render(str(col // self.unit_width + 1), True, dark_grey)
-                text_rect = text.get_rect(topleft=(pos_x, 5))
+                text_rect = text.get_rect(topleft=(pos_x+1, 5))
                 timeline_surface.blit(text, text_rect)
 
         # Zaman çizelgesini ekrana çiz
