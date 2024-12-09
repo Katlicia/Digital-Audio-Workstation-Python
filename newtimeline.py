@@ -30,7 +30,7 @@ class Timeline:
                     if self.offset_x < 0:  # Geriye kaydırmayı engelle
                         self.offset_x = 0 
 
-    def drawTimeline(self, win, x, y, width, height, tracks, sample_rate):
+    def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, color1, color2):
         """
         Timeline'ı ve track'leri belirtilen sınırlar içinde çizer.
         """
@@ -39,7 +39,7 @@ class Timeline:
         
         # Zaman çizelgesi yüzeyi oluşturuluyor
         timeline_surface = pygame.Surface((width, height))
-        timeline_surface.fill("grey")  # Arka plan rengi
+        timeline_surface.fill(color1)  # Arka plan rengi
 
         font = pygame.font.SysFont("Arial", 20)        
         
@@ -64,16 +64,16 @@ class Timeline:
             # Her track'in altına yatay çizgi ekle
             if i < len(tracks) - 1:  # Son track için çizgi çizme
                 line_y = track_y + self.track_height
-                pygame.draw.line(timeline_surface, dark_grey, (0, line_y), (width, line_y), 1)
+                pygame.draw.line(timeline_surface, color2, (0, line_y), (width, line_y), 1)
 
         # Zaman çizelgesi sütunlarını çiz
         for col in range(0, total_length_px, self.unit_width):
             pos_x = col - self.offset_x
             if 0 <= pos_x <= width:
-                pygame.draw.line(timeline_surface, dark_grey, (pos_x, 0), (pos_x, height))  # Dikey çizgi
-                pygame.draw.line(timeline_surface, dark_grey, (0, 26), (pos_x + 300, 26)) 
+                pygame.draw.line(timeline_surface, color2, (pos_x, 0), (pos_x, height))  # Dikey çizgi
+                pygame.draw.line(timeline_surface, color2, (0, 26), (pos_x + 300, 26)) 
                 # Sütun üzerindeki zamanı yaz
-                text = font.render(str(col // self.unit_width + 1), True, dark_grey)
+                text = font.render(str(col // self.unit_width + 1), True, color2)
                 text_rect = text.get_rect(topleft=(pos_x+1, 5))
                 timeline_surface.blit(text, text_rect)
 

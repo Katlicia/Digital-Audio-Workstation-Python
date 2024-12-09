@@ -194,15 +194,19 @@ volume_level = 1.0  # Başlangıç seviyesi (tam ses)
 volumeUpButton = Button(650, 10, 40, 25, win, "+")
 volumeDownButton = Button(700, 10, 40, 25, win, "-")
 
+color1 = grey
+color2 = dark_grey
+color3 = "grey"
+
 MenuButtonList = [
     # FileButton
-    Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, "FILE", menu_button_font_size, grey),
+    Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, "FILE", menu_button_font_size, color1),
     # EditButton
-    Button(menu_button_start_pos_x+menu_button_width, menu_button_y_pos, menu_button_width, menu_button_height, win, "EDIT", menu_button_font_size, grey),
+    Button(menu_button_start_pos_x+menu_button_width, menu_button_y_pos, menu_button_width, menu_button_height, win, "EDIT", menu_button_font_size, color1),
     # SaveButton 
-    Button(menu_button_start_pos_x+menu_button_width*2, menu_button_y_pos, menu_button_width, menu_button_height, win, "SAVE", menu_button_font_size, grey),
+    Button(menu_button_start_pos_x+menu_button_width*2, menu_button_y_pos, menu_button_width, menu_button_height, win, "SAVE", menu_button_font_size, color1),
     # ThemeButton
-    Button(menu_button_start_pos_x+menu_button_width*3, menu_button_y_pos, menu_button_width+5, menu_button_height, win, "THEME", menu_button_font_size, grey)
+    Button(menu_button_start_pos_x+menu_button_width*3, menu_button_y_pos, menu_button_width+5, menu_button_height, win, "THEME", menu_button_font_size, color1)
 ]
 
 
@@ -211,41 +215,63 @@ playButton = ImageButton(play_button_x, menu_button_y_pos, "images/play.png", wi
 stopButton = ImageButton(stop_button_x, menu_button_y_pos, "images/pause.png", win)
 resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png", win)
 
+
+
 TrackRectList = [
     Button(3, 70, 167, 56, win, "Track 1", 15, "white", "black"),
-    # pygame.Rect(3, 70, 167, 56),
     Button(3, 127, 167, 56, win, "Track 2", 15, "white", "black"),
-    # pygame.Rect(3, 127, 167, 56),
     Button(3, 184, 167, 56, win, "Track 3", 15, "white", "black"),
-    # pygame.Rect(3, 184, 167, 56),
     Button(3, 241, 167, 56, win, "Track 4", 15, "white", "black"),
-    # pygame.Rect(3, 241, 167, 56),
     Button(3, 298, 167, 56, win, "Track 5", 15, "white", "black"),
-    # pygame.Rect(3, 298, 167, 56),
     Button(3, 355, 167, 56, win, "Track 6", 15, "white", "black"),
-    # pygame.Rect(3, 355, 167, 56),
     Button(3, 412, 167, 56, win, "Track 7", 15, "white", "black"),
-    # pygame.Rect(3, 412, 167, 56),
     Button(3, 469, 167, 56, win, "Track 8", 15, "white", "black"),
-    # pygame.Rect(3, 469, 167, 56),
     Button(3, 526, 167, 56, win, "Track 9", 15, "white", "black"),
-    # pygame.Rect(3, 526, 167, 56),
     Button(3, 583, 167, 53, win, "Track 10", 15, "white", "black")
-    # pygame.Rect(3, 583, 167, 53)
 ]
+
+TrackMuteButtonList = [
+    Button(110, 98, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 155, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 212, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 269, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 326, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 383, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 440, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 497, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 554, 20, 20, win, "M", 15, color1, "white"),
+    Button(110, 611, 20, 20, win, "M", 15, color1, "white")
+]
+
+TrackSoloButtonList = [
+    Button(132, 98, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 155, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 212, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 269, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 326, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 383, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 440, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 497, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 554, 20, 20, win, "S", 15, color1, "white"),
+    Button(132, 611, 20, 20, win, "S", 15, color1, "white")
+]
+
 
 timeline = Timeline()
 
 while running:
     x, y = win.get_size()
 
+    color1 = grey
+    color2 = dark_grey
+    color3 = "grey"
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         pos = pygame.mouse.get_pos()
         
-        timeline.handleScroll(event)  # Sadece timeline'ı kaydır
-        #timeline.handleZoom(event)    
+        timeline.handleScroll(event)  # Sadece timeline'ı kaydır    
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if recordButton.isClicked(pos):
@@ -299,25 +325,35 @@ while running:
         resetButton.setImage("images/reset.png")
 
     menuFrameRect = pygame.Rect(menu_button_start_pos_x, menu_button_y_pos, width + 2.5, menu_button_height)
-    pygame.draw.rect(win, dark_grey, menuFrameRect, gui_line_border)
+    pygame.draw.rect(win, color2, menuFrameRect, gui_line_border)
     
     controlFrameRect = pygame.Rect(play_button_x, menu_button_y_pos, 25 * 3 - 1, menu_button_height)
-    pygame.draw.rect(win, dark_grey, controlFrameRect, gui_line_border)
+    pygame.draw.rect(win, color2, controlFrameRect, gui_line_border)
     
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)  # Sabit değerlerle tanımla
-    pygame.draw.rect(win, dark_grey, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, width + 5, 40+3, x, 593, tracks, sample_rate)
+    pygame.draw.rect(win, color2, timelineFrameRect, gui_line_border + 1)
+    timeline.drawTimeline(win, width + 5, 40+3, x, 593, tracks, sample_rate, color3, color2)
 
-    trackFrameLine = pygame.draw.line(win, dark_grey, (0.5, 69), (300, 69))
-    text = font.render("Tracks", True, dark_grey)
+    trackFrameLine = pygame.draw.line(win, color2, (0.5, 69), (300, 69))
+    text = font.render("Tracks", True, color2)
     text_rect = text.get_rect(center=(85, 55))
     win.blit(text, text_rect)
 
     for i in range(1, 10):
-        pygame.draw.line(win, dark_grey, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
+        pygame.draw.line(win, color2, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
 
-    for i in TrackRectList:
-        i.drawLeft()
+    for trackRect in TrackRectList:
+        trackRect.drawLeft()
+    
+    for muteButton in TrackMuteButtonList:
+        pygame.draw.rect(win, color2, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
+        pygame.draw.line(win, color2, (muteButton.rect.x + muteButton.width, muteButton.rect.y - gui_line_border), (muteButton.rect.x + muteButton.width, muteButton.rect.y + 21), gui_line_border)
+        muteButton.draw()
+        muteButton.isClicked(pos)
+
+    for soloButton in TrackSoloButtonList:
+        soloButton.draw()
+        soloButton.isClicked(pos)
 
     volumeUpButton.draw()
     volumeDownButton.draw()
