@@ -48,19 +48,6 @@ def find_next_empty_track():
     return None
 
 
-def draw_tracks(win, tracks, selected_track):
-    for i, track in enumerate(tracks):
-        y = track_start_y + i * (track_height + track_spacing)
-        color = (135, 206, 250) if i == selected_track else (59, 59, 59)
-        pygame.draw.rect(win, color, (50, y, 700, track_height))
-        
-        if track is not None:  # Eğer track doluysa
-            pygame.draw.rect(win, (100, 149, 237), (50, y, 700, track_height))
-            font = pygame.font.Font(None, 24)
-            text = font.render(f"Track {i + 1}", True, "white")
-            win.blit(text, (60, y + 15))  # Track ismi
-
-
 def start_recording():
     global recording, current_audio, current_track
     next_track = find_next_empty_track()
@@ -149,14 +136,6 @@ def adjust_volume(change):
     volume_level = max(0.0, min(1.50, volume_level + change))  # 0.0 ile 1.0 arasında sınırla
 
 
-def draw_recording_list(win, recordings):
-    font = pygame.font.Font(None, 36)
-    y = 50
-    for name in recordings.keys():
-        text_surface = font.render(name, True, "black")
-        win.blit(text_surface, (50, y))
-        y += 40
-
 
 clock = pygame.time.Clock()
 running = True
@@ -214,7 +193,6 @@ recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.pn
 playButton = ImageButton(play_button_x, menu_button_y_pos, "images/play.png", win)
 stopButton = ImageButton(stop_button_x, menu_button_y_pos, "images/pause.png", win)
 resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png", win)
-
 
 
 TrackRectList = [
