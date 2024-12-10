@@ -150,7 +150,8 @@ track_start_y = 50
 selected_track = None
 recording = False
 current_track = None
-
+editing_track = None
+original_text = ""
 
 
 # Ses akışı için değişkenler
@@ -239,6 +240,7 @@ timeline = Timeline()
 
 while running:
     x, y = win.get_size()
+    pygame.key.set_repeat(200, 50)
 
     color1 = grey
     color2 = dark_grey
@@ -266,16 +268,44 @@ while running:
             if stopButton.isClicked(pos):
                 stop_playing()
 
-            for i in range(len(tracks)):
-                y = track_start_y + i * (track_height + track_spacing)
-                if y <= pos[1] <= y + track_height:
-                    selected_track = i  # Seçili track'i güncelle
-
             if volumeUpButton.isClicked(pos):
                 adjust_volume(0.1)  # %10 artır
             if volumeDownButton.isClicked(pos):
                 adjust_volume(-0.1)  # %10 azalt
 
+            for i in range(len(tracks)):
+                y = track_start_y + i * (track_height + track_spacing)
+                if y <= pos[1] <= y + track_height:
+                    selected_track = i  # Seçili track'i güncelle
+
+            for button in TrackRectList:  # TrackRectList içindeki her bir butonu kontrol et
+                # Yazı alanını hesapla
+                text_surface = button.font.render(button.text, True, pygame.Color('black'))
+                text_rect = text_surface.get_rect(topleft=button.rect.topleft)
+
+                # Eğer mouse pozisyonu text alanına denk geliyorsa
+                if text_rect.collidepoint(pos):
+                    editing_track = TrackRectList.index(button)
+                    original_text = button.text
+                    break
+
+        if event.type == pygame.KEYDOWN:
+            if editing_track is not None:  # Düzenleme modundaysak
+                if event.key == pygame.K_BACKSPACE:  # Silme işlemi
+                    if len(TrackRectList[editing_track].text) > 1:
+                        TrackRectList[editing_track].text = TrackRectList[editing_track].text[:-1]
+                elif event.key == pygame.K_RETURN:  # Enter tuşu ile değişikliği kaydet
+                    editing_track = None  # Düzenleme modundan çık
+                elif event.key == pygame.K_ESCAPE:  # ESC tuşu ile eski haline dön
+                    TrackRectList[editing_track].text = original_text  # Eski yazıyı geri yükle
+                    editing_track = None  # Düzenleme modundan çık
+                else:  # Karakter ekleme
+                    if len(TrackRectList[editing_track].text) < 15:  # Maksimum 15 karakter
+                        TrackRectList[editing_track].text += event.unicode
+
+
+
+                
     win.fill("grey")
     pygame.draw.rect(win, light_blue, pygame.Rect(0, 0, x, 40))
 
@@ -320,8 +350,13 @@ while running:
     for i in range(1, 10):
         pygame.draw.line(win, color2, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
 
-    for trackRect in TrackRectList:
-        trackRect.drawLeft()
+    for i, trackRect in enumerate(TrackRectList):
+        if editing_track == i:
+            pygame.draw.rect(win, pygame.Color('white'), trackRect.rect)  # Düzenleme sırasında beyaz arka plan
+            text_surface = font.render(trackRect.text, True, pygame.Color('black'))
+            win.blit(text_surface, (trackRect.rect.x + 5, trackRect.rect.y + (trackRect.rect.height - text_surface.get_height()) // 2))
+        else:
+            trackRect.drawLeft()           
     
     for muteButton in TrackMuteButtonList:
         pygame.draw.rect(win, color2, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
