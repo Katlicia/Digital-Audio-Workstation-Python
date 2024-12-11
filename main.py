@@ -1,7 +1,7 @@
 import pygame
 from button import Button, ImageButton
 from config import *
-from newtimeline import Timeline
+from timeline import Timeline
 import sounddevice as sd
 import numpy as np
 
@@ -292,9 +292,9 @@ while running:
         if event.type == pygame.KEYDOWN:
             if editing_track is not None:  # Düzenleme modundaysak
                 if event.key == pygame.K_BACKSPACE:  # Silme işlemi
-                    if len(TrackRectList[editing_track].text) > 1:
+                    if len(TrackRectList[editing_track].text) > 0:
                         TrackRectList[editing_track].text = TrackRectList[editing_track].text[:-1]
-                elif event.key == pygame.K_RETURN:  # Enter tuşu ile değişikliği kaydet
+                elif event.key == pygame.K_RETURN and len(TrackRectList[editing_track].text) > 0:  # Enter tuşu ile değişikliği kaydet
                     editing_track = None  # Düzenleme modundan çık
                 elif event.key == pygame.K_ESCAPE:  # ESC tuşu ile eski haline dön
                     TrackRectList[editing_track].text = original_text  # Eski yazıyı geri yükle
