@@ -152,7 +152,7 @@ recording = False
 current_track = None
 editing_track = None
 original_text = ""
-
+playing_now = False
 
 # Ses akışı için değişkenler
 playing_audio = None
@@ -242,6 +242,8 @@ while running:
     x, y = win.get_size()
     pygame.key.set_repeat(200, 50)
 
+    delta_time = clock.get_time() / 1000
+
     color1 = grey
     color2 = dark_grey
     color3 = "grey"
@@ -264,9 +266,19 @@ while running:
 
             if playButton.isClicked(pos):
                 play_selected_track()
+                timeline.is_playing = True
+                playing_now = True
 
             if stopButton.isClicked(pos):
                 stop_playing()
+                timeline.is_playing = False
+                playing_now = False
+
+            if resetButton.isClicked(pos):
+                timeline.cursor_position = 0
+                timeline.is_playing = False
+                stop_playing()
+                playing_now = False
 
             if volumeUpButton.isClicked(pos):
                 adjust_volume(0.1)  # %10 artır
@@ -303,8 +315,14 @@ while running:
                     if len(TrackRectList[editing_track].text) < 15:  # Maksimum 15 karakter
                         TrackRectList[editing_track].text += event.unicode
 
+            if event.key == pygame.K_SPACE:  # Space tuşuna basınca oynatma durumu değişir
+                timeline.is_playing = not timeline.is_playing
+                if playing_now:
+                    stop_playing()
+                else:
+                    play_selected_track()
 
-
+    timeline.update_cursor(delta_time)
                 
     win.fill("grey")
     pygame.draw.rect(win, light_blue, pygame.Rect(0, 0, x, 40))
@@ -373,4 +391,6 @@ while running:
 
     pygame.display.update()
     
+    clock.tick(144)
+
 pygame.quit()

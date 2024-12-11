@@ -10,16 +10,20 @@ class Timeline:
         self.dynamic_length = 100
         self.min_zoom = 40
         self.max_zoom = 400
+        self.cursor_position = 0  # Cursor'un piksel olarak pozisyonu
+        self.is_playing = False  # Cursor hareketi aktif mi?
 
     def handleScroll(self, event):
         # Eğer Alt tuşu basılıysa zoom işlemi yapılacak
         if pygame.key.get_pressed()[pygame.K_LCTRL] or pygame.key.get_pressed()[pygame.K_RCTRL]:
             if event.type == pygame.MOUSEWHEEL:
                 zoom_change = 10  # Zoom değişim miktarı
+                cursor_time = self.cursor_position / self.unit_width  # Zoom öncesi cursor zamanı
                 if event.y == -1 and self.unit_width - zoom_change >= self.min_zoom:  # Fare tekerleği yukarı (zoom in)
                     self.unit_width -= zoom_change
                 elif event.y == 1 and self.unit_width + zoom_change <= self.max_zoom:  # Fare tekerleği aşağı (zoom out)
                     self.unit_width += zoom_change
+                self.cursor_position = cursor_time * self.unit_width  # Zoom sonrası cursor pozisyonunu koru
         else:
             # Kaydırma işlemi, Alt tuşu basılı değilse
             if event.type == pygame.MOUSEWHEEL:
@@ -67,7 +71,7 @@ class Timeline:
                 pygame.draw.line(timeline_surface, color2, (0, line_y), (width, line_y), 1)
 
         # Zaman çizelgesi sütunlarını çiz
-        for col in range(0, total_length_px, self.unit_width):
+        for col in range(0, int(total_length_px), int(self.unit_width)):
             pos_x = col - self.offset_x
             if 0 <= pos_x <= width:
                 pygame.draw.line(timeline_surface, color2, (pos_x, 0), (pos_x, height))  # Dikey çizgi
@@ -76,6 +80,9 @@ class Timeline:
                 text = font.render(str(col // self.unit_width + 1), True, color2)
                 text_rect = text.get_rect(topleft=(pos_x+1, 5))
                 timeline_surface.blit(text, text_rect)
+
+        # Cursor'u çiz
+        self.draw_cursor(timeline_surface, width, height, color="red")
 
         # Zaman çizelgesini ekrana çiz
         win.blit(timeline_surface, (x, y))
@@ -89,3 +96,19 @@ class Timeline:
         if visible_end < screen_width + self.unit_width * 10:
             self.dynamic_length += 10
 
+    def draw_cursor(self, surface, width, height, color="red"):
+        """
+        Zaman çizelgesindeki cursor'u çizer.
+        """
+        cursor_x = self.cursor_position - self.offset_x
+        if 0 <= cursor_x <= width:
+            pygame.draw.line(surface, color, (cursor_x, 0), (cursor_x, height), 2)
+
+    def update_cursor(self, delta_time):
+        """
+        Cursor'un pozisyonunu günceller.
+        delta_time: Bir önceki çerçeveden bu yana geçen süre.
+        """
+        if self.is_playing:
+            self.cursor_position += delta_time * self.unit_width  # Zamanla doğru orantılı hareket
+            self.cursor_position %= (self.dynamic_length * self.unit_width)  # Döngüsel hareket için
