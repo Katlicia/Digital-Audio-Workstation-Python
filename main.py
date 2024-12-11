@@ -289,10 +289,10 @@ while running:
             if volumeDownButton.isClicked(pos):
                 adjust_volume(-0.1)  # %10 azalt
 
-            for i in range(len(tracks)):
-                y = track_start_y + i * (track_height + track_spacing)
-                if y <= pos[1] <= y + track_height:
-                    selected_track = i  # Seçili track'i güncelle
+            for i, solo in enumerate(TrackSoloButtonList):
+                if solo.isClicked(pos):
+                    if tracks[i] is not None and len(tracks[i]) > 0:
+                        selected_track = i
 
             for button in TrackRectList:  # TrackRectList içindeki her bir butonu kontrol et
                 # Yazı alanını hesapla

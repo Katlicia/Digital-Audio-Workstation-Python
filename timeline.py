@@ -61,6 +61,17 @@ class Timeline:
 
         font = pygame.font.SysFont("Arial", 20)        
         
+        # Geçici kayıt buffer'ını çiz
+        if self.is_recording and self.recording_buffer and self.active_track is not None:
+            track_y = 26 + self.active_track * self.track_height  # Aktif track pozisyonu
+            pygame.draw.rect(
+                timeline_surface, (255, 69, 0),  # Geçici track rengi
+                (
+                    self.recording_buffer[0] - self.offset_x, track_y + 1,
+                    self.recording_buffer[1] - self.recording_buffer[0], self.track_height
+                )
+            )
+
         # Track'leri zaman çizelgesine ekle
         for i, track in enumerate(tracks):
             track_y = 26 + i * (self.track_height)  # Track'in y pozisyonu
@@ -83,6 +94,7 @@ class Timeline:
                 line_y = track_y + self.track_height
                 pygame.draw.line(timeline_surface, color2, (0, line_y), (width, line_y), 1)
 
+
         # Zaman çizelgesi sütunlarını çiz
         for col in range(0, int(total_length_px), int(self.unit_width)):
             pos_x = col - self.offset_x
@@ -96,17 +108,6 @@ class Timeline:
 
         # Cursor'u çiz
         self.draw_cursor(timeline_surface, width, height, color="red")
-
-        # Geçici kayıt buffer'ını çiz
-        if self.is_recording and self.recording_buffer and self.active_track is not None:
-            track_y = 26 + self.active_track * self.track_height  # Aktif track pozisyonu
-            pygame.draw.rect(
-                timeline_surface, (255, 69, 0),  # Geçici track rengi
-                (
-                    self.recording_buffer[0] - self.offset_x, track_y + 1,
-                    self.recording_buffer[1] - self.recording_buffer[0], self.track_height
-                )
-            )
 
         # Zaman çizelgesini ekrana çiz
         win.blit(timeline_surface, (x, y))
