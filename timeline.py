@@ -34,6 +34,16 @@ class Timeline:
                     if self.offset_x < 0:  # Geriye kaydırmayı engelle
                         self.offset_x = 0 
 
+    def handleClick(self, event, timeline_x, timeline_y, timeline_width, timeline_height):
+        """
+        Zaman çizelgesinde bir tıklama algılandığında, cursor'u tıklanan yere taşır.
+        """
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Sol tıklama
+            mouse_x, mouse_y = event.pos
+            if timeline_x <= mouse_x <= timeline_x + timeline_width and timeline_y <= mouse_y <= timeline_y + timeline_height:
+                # Tıklamanın zaman çizelgesi alanında olduğundan emin ol
+                self.cursor_position = mouse_x + self.offset_x - timeline_x
+
     def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, color1, color2):
         """
         Timeline'ı ve track'leri belirtilen sınırlar içinde çizer.
@@ -111,4 +121,4 @@ class Timeline:
         """
         if self.is_playing:
             self.cursor_position += delta_time * self.unit_width  # Zamanla doğru orantılı hareket
-            self.cursor_position %= (self.dynamic_length * self.unit_width)  # Döngüsel hareket için
+            self.cursor_position %= (self.dynamic_length * self.unit_width)  # Döngüel hareket için

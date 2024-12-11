@@ -253,7 +253,9 @@ while running:
             running = False
         pos = pygame.mouse.get_pos()
         
-        timeline.handleScroll(event)  # Sadece timeline'ı kaydır    
+        timeline.handleScroll(event)  # Sadece timeline'ı kaydır
+        # if not timeline.is_playing:
+        timeline.handleClick(event, timeline_x, timeline_y, x, timeline_height)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if recordButton.isClicked(pos):
@@ -321,6 +323,12 @@ while running:
                     stop_playing()
                 else:
                     play_selected_track()
+            
+            if event.key == pygame.K_r:
+                timeline.cursor_position = 0
+                timeline.is_playing = False
+                stop_playing()
+                playing_now = False
 
     timeline.update_cursor(delta_time)
                 
@@ -358,7 +366,7 @@ while running:
     
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)  # Sabit değerlerle tanımla
     pygame.draw.rect(win, color2, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, width + 5, 40+3, x, 593, tracks, sample_rate, color3, color2)
+    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, tracks, sample_rate, color3, color2)
 
     trackFrameLine = pygame.draw.line(win, color2, (0.5, 69), (300, 69))
     text = font.render("Tracks", True, color2)

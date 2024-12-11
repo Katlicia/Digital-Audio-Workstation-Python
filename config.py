@@ -21,6 +21,11 @@ play_button_x = 250
 stop_button_x = play_button_x + control_buttons_gap
 reset_button_x = stop_button_x + control_buttons_gap
 
+timeline_x = 170
+timeline_y = 43
+timeline_height = 593
+
+
 darkTheme = ((0, 0, 0), (59, 59, 59), (99, 99, 99), (232, 244, 248), (255, 255, 255))
 lightTheme = ((0, 0, 0), (59, 59, 59), (99, 99, 99), (255, 255, 255), (255, 255, 255))
 strawberyTheme = ((204, 60, 60), (218, 61, 76), (222, 62, 93), (236, 86, 127), (239, 92, 142))
