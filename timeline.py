@@ -12,6 +12,10 @@ class Timeline:
         self.max_zoom = 400
         self.cursor_position = 0  # Cursor'un piksel olarak pozisyonu
         self.is_playing = False  # Cursor hareketi aktif mi?
+        self.is_recording = False  # Kayıt aktif mi?
+        self.recording_buffer = None  # Geçici track kaydı için buffer
+        self.active_track = None  # Şu anda kaydedilen track
+        self.track_starts = [0] * self.track_count  # Her track'in başlangıç pozisyonu
 
     def handleScroll(self, event):
         # Eğer Alt tuşu basılıysa zoom işlemi yapılacak
@@ -66,8 +70,7 @@ class Timeline:
                 track_width = int(track_duration * self.unit_width)
 
                 # Track başlangıç ve bitiş pozisyonları
-                track_x_start = - self.offset_x
-                track_x_end = track_x_start + track_width
+                track_x_start = self.track_starts[i] - self.offset_x
 
                 # Track kutusunu çiz
                 pygame.draw.rect(
@@ -93,6 +96,17 @@ class Timeline:
 
         # Cursor'u çiz
         self.draw_cursor(timeline_surface, width, height, color="red")
+
+        # Geçici kayıt buffer'ını çiz
+        if self.is_recording and self.recording_buffer and self.active_track is not None:
+            track_y = 26 + self.active_track * self.track_height  # Aktif track pozisyonu
+            pygame.draw.rect(
+                timeline_surface, (255, 69, 0),  # Geçici track rengi
+                (
+                    self.recording_buffer[0] - self.offset_x, track_y + 1,
+                    self.recording_buffer[1] - self.recording_buffer[0], self.track_height
+                )
+            )
 
         # Zaman çizelgesini ekrana çiz
         win.blit(timeline_surface, (x, y))
@@ -122,3 +136,24 @@ class Timeline:
         if self.is_playing:
             self.cursor_position += delta_time * self.unit_width  # Zamanla doğru orantılı hareket
             self.cursor_position %= (self.dynamic_length * self.unit_width)  # Döngüel hareket için
+
+            if self.is_recording:
+                if self.recording_buffer is None:
+                    self.recording_buffer = [self.cursor_position, self.cursor_position]
+                else:
+                    self.recording_buffer[1] = self.cursor_position
+
+    def start_timeline_recording(self, track_index):
+        """Kaydı başlatır."""
+        self.is_recording = True
+        self.is_playing = True
+        self.recording_buffer = None
+        self.active_track = track_index
+        self.track_starts[track_index] = self.cursor_position  # Başlangıç pozisyonunu ayarla
+
+    def stop_timeline_recording(self):
+        """Kaydı durdurur."""
+        self.is_recording = False
+        self.is_playing = False
+        self.recording_buffer = None
+        self.active_track = None

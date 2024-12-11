@@ -261,9 +261,11 @@ while running:
             if recordButton.isClicked(pos):
                 if recording:
                     stop_recording()
+                    timeline.stop_timeline_recording()
                     recordButton.setImage("images/record.png")
                 else:
                     start_recording()
+                    timeline.start_timeline_recording(current_track)
                     recordButton.setImage("images/recording.png")
 
             if playButton.isClicked(pos):
