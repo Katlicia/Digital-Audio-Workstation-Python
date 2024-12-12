@@ -23,11 +23,27 @@ class Timeline:
             if event.type == pygame.MOUSEWHEEL:
                 zoom_change = 10  # Zoom değişim miktarı
                 cursor_time = self.cursor_position / self.unit_width  # Zoom öncesi cursor zamanı
+                
+                # Eski unit_width'ü kaydet
+                old_unit_width = self.unit_width
+                
                 if event.y == -1 and self.unit_width - zoom_change >= self.min_zoom:  # Fare tekerleği yukarı (zoom in)
                     self.unit_width -= zoom_change
                 elif event.y == 1 and self.unit_width + zoom_change <= self.max_zoom:  # Fare tekerleği aşağı (zoom out)
                     self.unit_width += zoom_change
+                
+                # Track başlangıç pozisyonlarını yeniden ölçeklendir
+                scale_factor = self.unit_width / old_unit_width
+                self.track_starts = [int(start * scale_factor) for start in self.track_starts]
+                
+                # Cursor pozisyonunu güncelle
                 self.cursor_position = cursor_time * self.unit_width  # Zoom sonrası cursor pozisyonunu koru
+                
+                # Tracklerin ekran içinde kalmasını sağla
+                total_length_px = self.dynamic_length * self.unit_width
+                max_visible_x = self.offset_x + pygame.display.get_window_size()[0]
+                if total_length_px < max_visible_x:  # Eğer tracklerin sonu ekranın dışına taşarsa
+                    self.offset_x = max(0, self.offset_x - (max_visible_x - total_length_px))
         else:
             # Kaydırma işlemi, Alt tuşu basılı değilse
             if event.type == pygame.MOUSEWHEEL:
@@ -36,7 +52,9 @@ class Timeline:
                 elif event.y == -1:  # Fare tekerleği aşağı
                     self.offset_x -= 100
                     if self.offset_x < 0:  # Geriye kaydırmayı engelle
-                        self.offset_x = 0 
+                        self.offset_x = 0
+
+
 
     def handleClick(self, event, timeline_x, timeline_y, timeline_width, timeline_height):
         """

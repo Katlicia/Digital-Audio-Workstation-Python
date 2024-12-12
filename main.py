@@ -59,6 +59,7 @@ def start_recording():
 
 def stop_recording():
     global recording, current_audio, tracks
+
     if recording:
         # Ses verisini numpy array'e dönüştür
         audio_data = np.concatenate(current_audio, axis=0)
@@ -269,6 +270,7 @@ while running:
                     recordButton.setImage("images/recording.png")
 
             if playButton.isClicked(pos):
+                play_all_tracks()
                 play_selected_track()
                 timeline.is_playing = True
                 playing_now = True
@@ -279,10 +281,10 @@ while running:
                 playing_now = False
 
             if resetButton.isClicked(pos):
-                timeline.cursor_position = 0
-                timeline.is_playing = False
                 stop_playing()
+                timeline.is_playing = False
                 playing_now = False
+                timeline.cursor_position = 0
 
             if volumeUpButton.isClicked(pos):
                 adjust_volume(0.1)  # %10 artır
