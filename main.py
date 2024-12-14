@@ -102,29 +102,58 @@ def stop_playing():
 
 def play_all_tracks():
     """
-    Tüm track'leri aynı anda çalar.
+    Zaman çizelgesindeki başlangıç pozisyonlarına göre tüm track'leri aynı anda çalar.
     """
     global playing_audio, current_audio_position, stream
+
     if any(track is not None for track in tracks):
-        max_length = max(len(track) for track in tracks if track is not None)
+        # Tüm track'lerin zaman çizelgesindeki gerçek başlangıç ve bitiş pozisyonlarını hesapla
+        max_length = max(
+            int(round(timeline.track_starts[i] / timeline.unit_width * sample_rate)) + len(track)
+            if track is not None else 0
+            for i, track in enumerate(tracks)
+        )
+
+        # Ses mikslemesi için boş bir array oluştur
         mixed_audio = np.zeros(max_length, dtype=np.float32)
 
-        for track in tracks:
+        for i, track in enumerate(tracks):
             if track is not None:
+                # Stereo ses ise mono'ya çevir
                 if len(track.shape) > 1:
                     track = np.mean(track, axis=1)
-                padded_track = np.pad(track, (0, max_length - len(track)), 'constant')
-                mixed_audio += padded_track
 
-        mixed_audio /= np.max(np.abs(mixed_audio))  # Normalize et
+                # Track'in zaman çizelgesindeki başlangıç pozisyonunu hesapla (sample bazında)
+                track_start_in_samples = int(timeline.track_starts[i] / timeline.unit_width * sample_rate)
+
+                # Track'in miksleme için bitiş pozisyonunu hesapla
+                end_position = track_start_in_samples + len(track)
+
+                # Track'i mikslenmiş sese yerleştir
+                mixed_audio[track_start_in_samples:end_position] += track
+
+        # Sesleri normalize et
+        if np.max(np.abs(mixed_audio)) > 0:
+            mixed_audio /= np.max(np.abs(mixed_audio))
+
+        # Çalmaya hazır hale getir
         playing_audio = mixed_audio
         current_audio_position = 0
 
-        # Akışı başlat
+        # Mevcut bir ses akışı varsa kapat
         if stream is not None:
             stream.close()
+
+        # Yeni bir ses akışı başlat
         stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
         stream.start()
+
+
+
+
+
+
+
 
 
 def adjust_volume(change):
@@ -249,6 +278,8 @@ while running:
     color2 = dark_grey
     color3 = "grey"
 
+    timeline.update_cursor(delta_time)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -333,8 +364,6 @@ while running:
                 timeline.is_playing = False
                 stop_playing()
                 playing_now = False
-
-    timeline.update_cursor(delta_time)
                 
     win.fill("grey")
     pygame.draw.rect(win, light_blue, pygame.Rect(0, 0, x, 40))
