@@ -102,17 +102,21 @@ def stop_playing():
 
 def play_all_tracks():
     """
-    Zaman çizelgesindeki başlangıç pozisyonlarına göre tüm track'leri aynı anda çalar.
+    Zaman çizelgesindeki başlangıç pozisyonlarına ve cursor'un bulunduğu yere göre tüm track'leri çalar.
     """
     global playing_audio, current_audio_position, stream
 
     if any(track is not None for track in tracks):
-        # Tüm track'lerin zaman çizelgesindeki gerçek başlangıç ve bitiş pozisyonlarını hesapla
+        # Cursor'un sample cinsinden pozisyonunu hesapla
+        cursor_sample_position = int(timeline.cursor_position / timeline.unit_width * sample_rate)
+
+        # Tüm track'lerin miksleme için maksimum uzunluğunu hesapla
         max_length = max(
             int(round(timeline.track_starts[i] / timeline.unit_width * sample_rate)) + len(track)
             if track is not None else 0
             for i, track in enumerate(tracks)
         )
+        max_length = max(max_length, cursor_sample_position)  # Cursor'u hesaba kat
 
         # Ses mikslemesi için boş bir array oluştur
         mixed_audio = np.zeros(max_length, dtype=np.float32)
@@ -126,18 +130,20 @@ def play_all_tracks():
                 # Track'in zaman çizelgesindeki başlangıç pozisyonunu hesapla (sample bazında)
                 track_start_in_samples = int(timeline.track_starts[i] / timeline.unit_width * sample_rate)
 
-                # Track'in miksleme için bitiş pozisyonunu hesapla
-                end_position = track_start_in_samples + len(track)
-
-                # Track'i mikslenmiş sese yerleştir
-                mixed_audio[track_start_in_samples:end_position] += track
+                # Eğer track cursor'un gerisindeyse, sadece cursor'dan sonraki kısmı miksle
+                if track_start_in_samples + len(track) > cursor_sample_position:
+                    start_in_track = max(0, cursor_sample_position - track_start_in_samples)
+                    track_end = len(track)
+                    if start_in_track < track_end:
+                        start_in_mixed = max(0, track_start_in_samples - cursor_sample_position)
+                        mixed_audio[start_in_mixed:start_in_mixed + (track_end - start_in_track)] += track[start_in_track:]
 
         # Sesleri normalize et
         if np.max(np.abs(mixed_audio)) > 0:
             mixed_audio /= np.max(np.abs(mixed_audio))
 
-        # Çalmaya hazır hale getir
-        playing_audio = mixed_audio
+        # Mikslenmiş sesin sadece cursor pozisyonundan sonraki kısmını çal
+        playing_audio = mixed_audio[cursor_sample_position:]
         current_audio_position = 0
 
         # Mevcut bir ses akışı varsa kapat
@@ -147,6 +153,7 @@ def play_all_tracks():
         # Yeni bir ses akışı başlat
         stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
         stream.start()
+
 
 
 
@@ -358,6 +365,7 @@ while running:
                     stop_playing()
                 else:
                     play_selected_track()
+                    play_all_tracks()
             
             if event.key == pygame.K_r:
                 timeline.cursor_position = 0
