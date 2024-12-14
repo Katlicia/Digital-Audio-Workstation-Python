@@ -61,7 +61,7 @@ def start_recording():
             stream = sd.InputStream(callback=audio_callback, channels=1, samplerate=sample_rate)
             stream.start()
 
-        print(f"Recording started on track {current_track}.")
+        # print(f"Recording started on track {current_track}.")
     else:
         print("Warning: No empty track available for recording.")
 
@@ -71,12 +71,12 @@ def stop_recording():
     global recording, current_audio, tracks
 
     if recording:
-        print(f"Stopping recording. Current audio length: {len(current_audio)}")
+        # print(f"Stopping recording. Current audio length: {len(current_audio)}")
         if current_audio and len(current_audio) > 0:
             # Kaydedilen tüm ses verilerini birleştir ve track'e ekle
             audio_data = np.concatenate(current_audio, axis=0)
             tracks[current_track] = audio_data
-            print(f"Track {current_track} saved with length {len(audio_data)}.")
+            #print(f"Track {current_track} saved with length {len(audio_data)}.")
         else:
             print("Warning: No audio data recorded.")
         current_audio = []
@@ -95,10 +95,11 @@ def stop_recording():
 def audio_callback(indata, frames, time, status):
     global current_audio
     if recording:
-        print(f"Recording is active. Frames: {frames}")
+        # print(f"Recording is active. Frames: {frames}")
         current_audio.append(indata.copy())  # Alınan mikrofon verisini current_audio'ya ekle
     else:
-        print("Recording is inactive.")
+        pass
+        # print("Recording is inactive.")
 
 
 
@@ -136,7 +137,7 @@ def play_all_tracks():
     global playing_audio, current_audio_position, stream
 
     if recording:
-        print("Recording is active. Playback cannot start during recording.")
+        # print("Recording is active. Playback cannot start during recording.")
         return  # Eğer kayıt aktifse, çalma işlemini iptal et
 
     # Çalma işlemini devam ettir

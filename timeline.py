@@ -1,3 +1,4 @@
+import numpy as np
 import pygame
 from config import *
 
@@ -106,6 +107,12 @@ class Timeline:
                     timeline_surface, (100, 149, 237), 
                     (track_x_start + 1, track_y+1, track_width, self.track_height)
                 )
+                self.draw_waveform(
+                    timeline_surface, track,
+                    track_x_start, track_y,
+                    track_width, self.track_height,
+                    color=(255, 0, 0)  # Dalga formu rengi
+                )
                 
             # Her track'in altına yatay çizgi ekle
             if i < len(tracks) - 1:  # Son track için çizgi çizme
@@ -176,3 +183,54 @@ class Timeline:
         self.is_playing = False
         self.recording_buffer = None
         self.active_track = None
+
+    def draw_waveform(self, surface, track, x, y, width, height, color):
+        """
+        Bir track'in dalga formunu (waveform) çizer ve aralarını doldurur.
+        
+        Args:
+            surface: Pygame surface, çizim yapılacak yüzey.
+            track: NumPy array, ses verisi.
+            x, y: Çizim yapılacak alanın başlangıç koordinatları.
+            width, height: Çizim yapılacak alanın genişliği ve yüksekliği.
+            unit_width: Zaman çizelgesindeki 1 saniyenin piksel genişliği.
+            color: Dalga formunun çizim rengi.
+        """
+        if track is None or len(track) == 0:
+            return
+
+        # Track verisini normalize et
+        waveform = track / np.max(np.abs(track))
+
+        # Ekrana uygun örnekleme: Her pikseldeki min ve max değerlerini al
+        samples_per_pixel = max(1, len(waveform) // width)
+        reduced_waveform = [
+            (np.min(waveform[i:i+samples_per_pixel]), np.max(waveform[i:i+samples_per_pixel]))
+            for i in range(0, len(waveform), samples_per_pixel)
+        ]
+
+        # Orta çizgiyi belirle
+        mid_y = y + height // 2
+
+        # Dalga formunun üst ve alt sınırlarını belirlemek için nokta listeleri
+        top_points = []
+        bottom_points = []
+
+        # Dalga formunu çiz ve aralarını doldur
+        for i, (min_val, max_val) in enumerate(reduced_waveform):
+            pos_x = x + i
+            top_y = mid_y - int(max_val * (height // 2))  # Üst çizgi
+            bottom_y = mid_y - int(min_val * (height // 2))  # Alt çizgi
+
+            # Track'in genişliğiyle sınırlama
+            if x <= pos_x < x + width:
+                top_points.append((pos_x, top_y))
+                bottom_points.append((pos_x, bottom_y))
+
+        # Dalga formunu doldur
+        if top_points and bottom_points:
+            # Alt noktaları ters sırada ekle, böylece poligon kapalı olur
+            bottom_points.reverse()
+            pygame.draw.polygon(surface, color, top_points + bottom_points, 0)  # 0 kalınlık ile dolgu yap
+
+
