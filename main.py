@@ -154,15 +154,6 @@ def play_all_tracks():
         stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
         stream.start()
 
-
-
-
-
-
-
-
-
-
 def adjust_volume(change):
     """
     Ses seviyesini artırır veya azaltır.
