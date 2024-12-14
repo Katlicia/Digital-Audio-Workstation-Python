@@ -49,30 +49,59 @@ def find_next_empty_track():
 
 
 def start_recording():
-    global recording, current_audio, current_track
+    global recording, current_audio, current_track, stream
     next_track = find_next_empty_track()
     if next_track is not None:
         recording = True
         current_track = next_track
-        current_audio = []  # Yeni ses verisi için liste oluştur
+        current_audio = []  # Yeni ses verisi için listeyi sıfırla
+
+        # Mikrofon akışını başlat
+        if stream is None or not stream.active:
+            stream = sd.InputStream(callback=audio_callback, channels=1, samplerate=sample_rate)
+            stream.start()
+
+        print(f"Recording started on track {current_track}.")
+    else:
+        print("Warning: No empty track available for recording.")
+
 
 
 def stop_recording():
     global recording, current_audio, tracks
 
     if recording:
-        # Ses verisini numpy array'e dönüştür
-        audio_data = np.concatenate(current_audio, axis=0)
-        tracks[current_track] = audio_data  # Track'e ses verisini kaydet
+        print(f"Stopping recording. Current audio length: {len(current_audio)}")
+        if current_audio and len(current_audio) > 0:
+            # Kaydedilen tüm ses verilerini birleştir ve track'e ekle
+            audio_data = np.concatenate(current_audio, axis=0)
+            tracks[current_track] = audio_data
+            print(f"Track {current_track} saved with length {len(audio_data)}.")
+        else:
+            print("Warning: No audio data recorded.")
+        current_audio = []
         recording = False
+
+        # Mikrofon akışını durdur
+        if stream is not None:
+            stream.stop()
     else:
-        recording = False
-        return
+        print("Recording is not active.")
+
+
+
 
 
 def audio_callback(indata, frames, time, status):
+    global current_audio
     if recording:
-        current_audio.append(indata.copy())  # Alınan sesi listeye ekle
+        print(f"Recording is active. Frames: {frames}")
+        current_audio.append(indata.copy())  # Alınan mikrofon verisini current_audio'ya ekle
+    else:
+        print("Recording is inactive.")
+
+
+
 
 
 def play_selected_track():
@@ -106,6 +135,11 @@ def play_all_tracks():
     """
     global playing_audio, current_audio_position, stream
 
+    if recording:
+        print("Recording is active. Playback cannot start during recording.")
+        return  # Eğer kayıt aktifse, çalma işlemini iptal et
+
+    # Çalma işlemini devam ettir
     if any(track is not None for track in tracks):
         # Cursor'un sample cinsinden pozisyonunu hesapla
         cursor_sample_position = int(timeline.cursor_position / timeline.unit_width * sample_rate)
@@ -153,6 +187,7 @@ def play_all_tracks():
         # Yeni bir ses akışı başlat
         stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
         stream.start()
+
 
 def adjust_volume(change):
     """
@@ -269,6 +304,7 @@ timeline = Timeline()
 while running:
     x, y = win.get_size()
     pygame.key.set_repeat(200, 50)
+    # print(f"Recording: {recording}, Current Audio Length: {len(current_audio)}")
 
     delta_time = clock.get_time() / 1000
 
@@ -284,7 +320,6 @@ while running:
         pos = pygame.mouse.get_pos()
         
         timeline.handleScroll(event)  # Sadece timeline'ı kaydır
-        # if not timeline.is_playing:
         timeline.handleClick(event, timeline_x, timeline_y, x, timeline_height)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -298,7 +333,7 @@ while running:
                     timeline.start_timeline_recording(current_track)
                     recordButton.setImage("images/recording.png")
 
-            if playButton.isClicked(pos):
+            if playButton.isClicked(pos) and recording == False:
                 play_all_tracks()
                 play_selected_track()
                 timeline.is_playing = True
