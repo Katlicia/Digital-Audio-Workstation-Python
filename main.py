@@ -67,8 +67,6 @@ def start_recording():
     else:
         print("Warning: No empty track available for recording.")
 
-
-
 def stop_recording():
     global recording, current_audio, tracks
 
@@ -89,7 +87,6 @@ def stop_recording():
             stream.stop()
     else:
         print("Recording is not active.")
-
 
 def audio_callback(indata, frames, time, status):
     global current_audio
@@ -306,6 +303,29 @@ temptrackcolor = theme[1] # Temp track, waveform color
 timelinetrackcolor = theme[0] # timelinetrack color
 text_color = (255, 255, 255) # Text color
 
+recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.png", win)
+playButton = ImageButton(play_button_x, menu_button_y_pos, f"images/{themestr}/playpassive.png", win)
+stopButton = ImageButton(stop_button_x, menu_button_y_pos, f"images/{themestr}/pausepassive.png", win)
+resetButton = ImageButton(reset_button_x, menu_button_y_pos, f"images/{themestr}/resetpassive.png", win)
+volumeUpButton = ImageButton(volume_up_button_x, menu_button_y_pos, f"images/{themestr}/sounduppassive.png", win)
+volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images/{themestr}/sounddownpassive.png", win)
+
+file_menu_open = False
+file_menu_buttons = [
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15)
+]
+
+theme_menu_open = False
+theme_menu_buttons = [
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Dark", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 2, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Light", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 3, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Strawberry", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 4, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Green Tea", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 5, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Mochi", font_size=15), 
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 6, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Sakura", font_size=15)
+]
+
 MenuButtonList = [
     # FileButton
     Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, rectcolor, linecolor, text_color, "FILE", menu_button_font_size),
@@ -318,12 +338,6 @@ MenuButtonList = [
 ]
 
 
-recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.png", win)
-playButton = ImageButton(play_button_x, menu_button_y_pos, f"images/{themestr}/playpassive.png", win)
-stopButton = ImageButton(stop_button_x, menu_button_y_pos, f"images/{themestr}/pausepassive.png", win)
-resetButton = ImageButton(reset_button_x, menu_button_y_pos, f"images/{themestr}/resetpassive.png", win)
-volumeUpButton = ImageButton(volume_up_button_x, menu_button_y_pos, f"images/{themestr}/sounduppassive.png", win)
-volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images/{themestr}/sounddownpassive.png", win)
 
 TrackRectList = [
     Button(3, 70, 167, 56, win, rectcolor, linecolor, text_color, "Track 1", 15),
@@ -378,39 +392,58 @@ while running:
     wincolor = theme[4]
 
     delta_time = clock.get_time() / 1000
+    pos = pygame.mouse.get_pos()
 
     timeline.update_cursor(delta_time)
 
     for event in pygame.event.get():
-        
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_1:
-                theme = darkTheme
-                themestr = "darkTheme"
-            elif event.key == pygame.K_2:
-                theme = lightTheme
-                themestr = "lightTheme"
-            elif event.key == pygame.K_3:
-                theme = strawberryTheme
-                themestr = "strawberryTheme"
-            elif event.key == pygame.K_4:
-                theme = greenteaTheme
-                themestr = "greenteaTheme"
-            elif event.key == pygame.K_5:
-                theme = mochiTheme
-                themestr = "mochiTheme"
-            elif event.key == pygame.K_6:
-                theme = sakuraTheme
-                themestr = "sakuraTheme"
-
         if event.type == pygame.QUIT:
             running = False
-        pos = pygame.mouse.get_pos()
-        
+
         timeline.handleScroll(event)  # Sadece timeline'ı kaydır
         timeline.handleClick(event, timeline_x, timeline_y, x, timeline_height)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
+
+            if theme_menu_open:
+                for theme_button in theme_menu_buttons:
+                    if theme_button.isClicked(pos):
+                        if theme_button.text == "Dark":
+                            theme = darkTheme
+                            themestr = "darkTheme"
+                        elif theme_button.text == "Light":
+                            theme = lightTheme
+                            themestr = "lightTheme"
+                        elif theme_button.text == "Strawberry":
+                            theme = strawberryTheme
+                            themestr = "strawberryTheme"
+                        elif theme_button.text == "Green Tea":
+                            theme = greenteaTheme
+                            themestr = "greenteaTheme"
+                        elif theme_button.text == "Mochi":
+                            theme = mochiTheme
+                            themestr = "mochiTheme"
+                        elif theme_button.text == "Sakura":
+                            theme = sakuraTheme
+                            themestr = "sakuraTheme"
+                theme_menu_open = False  # Menü kapatıldı
+
+            # Sonra dosya menüsü kontrolü
+            elif file_menu_open:
+                for file_button in file_menu_buttons:
+                    if file_button.isClicked(pos):
+                        if file_button.text == "Export as WAV":
+                            export_tracks_to_file(filename="output", filetype="wav")
+                        elif file_button.text == "Export as MP3":
+                            export_tracks_to_file(filename="output", filetype="mp3")
+                file_menu_open = False  # Menü kapatıldı
+
+            # Ana menü tıklamaları
+            elif MenuButtonList[0].isClicked(pos):  # File menüsü
+                file_menu_open = not file_menu_open
+            elif MenuButtonList[-1].isClicked(pos):  # Theme menüsü
+                theme_menu_open = not theme_menu_open
+
             if recordButton.isClicked(pos):
                 if recording:
                     stop_recording()
@@ -458,6 +491,8 @@ while running:
                     editing_track = TrackRectList.index(button)
                     original_text = button.text
                     break
+                else:
+                    editing_track = None
 
         if event.type == pygame.KEYDOWN:
             if editing_track is not None:  # Düzenleme modundaysak
@@ -553,7 +588,7 @@ while running:
         trackRect.text_color = text_color
         if editing_track == i:
             pygame.draw.rect(win, trackRect.passive_color, trackRect.rect)  # Düzenleme sırasında beyaz arka plan
-            text_surface = font.render(trackRect.text, True, pygame.Color('black'))
+            text_surface = font.render(trackRect.text, True, text_color)
             win.blit(text_surface, (trackRect.rect.x + 5, trackRect.rect.y + (trackRect.rect.height - text_surface.get_height()) // 2))
         else:
             trackRect.drawLeft()           
@@ -574,6 +609,18 @@ while running:
         soloButton.draw()
         soloButton.isClicked(pos)
 
+    if file_menu_open:
+        for file_button in file_menu_buttons:
+            file_button.passive_color = rectcolor
+            file_button.active_color = linecolor
+            file_button.draw()
+
+    if theme_menu_open:
+        for theme_button in theme_menu_buttons:
+            theme_button.passive_color = rectcolor
+            theme_button.active_color = linecolor
+            theme_button.draw()
+    
     pygame.display.update()
     
     clock.tick(144)
