@@ -3,6 +3,8 @@ from button import Button, ImageButton
 from config import *
 from timeline import Timeline
 import sounddevice as sd
+import wave
+from pydub import AudioSegment
 import numpy as np
 
 pygame.init()
@@ -188,6 +190,73 @@ def play_all_tracks():
         # Yeni bir ses akışı başlat
         stream = sd.OutputStream(callback=audio_playback_callback, samplerate=sample_rate, channels=1)
         stream.start()
+
+
+def export_tracks_to_file(filename="output", filetype="wav"):
+    """
+    Tüm track'leri miksleyip bir WAV veya MP3 dosyasına dışa aktarır.
+    Args:
+        filename (str): Çıkış dosyasının adı (uzantı olmadan).
+        filetype (str): Çıkış formatı ("wav" veya "mp3").
+    """
+    if not any(track is not None for track in tracks):
+        print("No tracks to export.")
+        return
+
+    # Tüm track'lerin miksleme için maksimum uzunluğunu hesapla
+    max_length = max(
+        int(round(timeline.track_starts[i] / timeline.unit_width * sample_rate)) + len(track)
+        if track is not None else 0
+        for i, track in enumerate(tracks)
+    )
+
+    # Ses mikslemesi için boş bir array oluştur
+    mixed_audio = np.zeros(max_length, dtype=np.float32)
+
+    for i, track in enumerate(tracks):
+        if track is not None:
+            # Stereo ses ise mono'ya çevir
+            if len(track.shape) > 1:
+                track = np.mean(track, axis=1)
+
+            # Track'in zaman çizelgesindeki başlangıç pozisyonunu hesapla (sample bazında)
+            track_start_in_samples = int(timeline.track_starts[i] / timeline.unit_width * sample_rate)
+
+            # Track'i miksleme array'ine ekle
+            mixed_audio[track_start_in_samples:track_start_in_samples + len(track)] += track
+
+    # Sesleri normalize et
+    if np.max(np.abs(mixed_audio)) > 0:
+        mixed_audio /= np.max(np.abs(mixed_audio))
+
+    # NumPy array'ini int16 formatına dönüştür
+    output_audio = (mixed_audio * 32767).astype(np.int16)
+
+    # Çıkış dosyası formatına göre yaz
+    if filetype == "wav":
+        output_file = f"{filename}.wav"
+        with wave.open(output_file, "w") as wf:
+            wf.setnchannels(1)  # Mono kanal
+            wf.setsampwidth(2)  # 16-bit
+            wf.setframerate(sample_rate)
+            wf.writeframes(output_audio.tobytes())
+    elif filetype == "mp3":
+        output_file = f"{filename}.mp3"
+        # WAV formatına geçici bir dosya yaz
+        temp_wav_file = f"{filename}_temp.wav"
+        with wave.open(temp_wav_file, "w") as wf:
+            wf.setnchannels(1)  # Mono kanal
+            wf.setsampwidth(2)  # 16-bit
+            wf.setframerate(sample_rate)
+            wf.writeframes(output_audio.tobytes())
+        # WAV'ı MP3'e dönüştür
+        audio = AudioSegment.from_wav(temp_wav_file)
+        audio.export(output_file, format="mp3")
+    else:
+        print(f"Unsupported file type: {filetype}")
+        return
+
+    print(f"Tracks exported to {output_file}")
 
 
 def adjust_volume(change):
