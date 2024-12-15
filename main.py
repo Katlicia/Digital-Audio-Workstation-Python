@@ -1,11 +1,11 @@
 import pygame
 from button import Button, ImageButton
 from config import *
+import wave
 from timeline import Timeline
 import sounddevice as sd
-import wave
-from pydub import AudioSegment
 import numpy as np
+from pydub import AudioSegment
 
 pygame.init()
 
