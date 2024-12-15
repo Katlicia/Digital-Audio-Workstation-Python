@@ -381,6 +381,17 @@ TrackSoloButtonList = [
 
 timeline = Timeline()
 
+def update_menu_colors():
+    for file_button in file_menu_buttons:
+        file_button.passive_color = rectcolor
+        file_button.active_color = linecolor
+        file_button.text_color = text_color
+    
+    for theme_button in theme_menu_buttons:
+        theme_button.passive_color = rectcolor
+        theme_button.active_color = linecolor
+        theme_button.text_color = text_color
+
 while running:
     x, y = win.get_size()
     pygame.key.set_repeat(200, 50)
@@ -426,6 +437,7 @@ while running:
                         elif theme_button.text == "Sakura":
                             theme = sakuraTheme
                             themestr = "sakuraTheme"
+                update_menu_colors()
                 theme_menu_open = False  # Menü kapatıldı
 
             # Sonra dosya menüsü kontrolü
@@ -611,16 +623,13 @@ while running:
 
     if file_menu_open:
         for file_button in file_menu_buttons:
-            file_button.passive_color = rectcolor
-            file_button.active_color = linecolor
             file_button.draw()
 
     if theme_menu_open:
         for theme_button in theme_menu_buttons:
-            theme_button.passive_color = rectcolor
-            theme_button.active_color = linecolor
             theme_button.draw()
     
+    update_menu_colors()
     pygame.display.update()
     
     clock.tick(144)
