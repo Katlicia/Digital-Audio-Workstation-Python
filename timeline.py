@@ -67,7 +67,7 @@ class Timeline:
                 # Tıklamanın zaman çizelgesi alanında olduğundan emin ol
                 self.cursor_position = mouse_x + self.offset_x - timeline_x
 
-    def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, color1, color2):
+    def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, wincolor, linecolor, temptrackcolor, trackcolor, wavecolor):
         """
         Timeline'ı ve track'leri belirtilen sınırlar içinde çizer.
         """
@@ -76,7 +76,7 @@ class Timeline:
         
         # Zaman çizelgesi yüzeyi oluşturuluyor
         timeline_surface = pygame.Surface((width, height))
-        timeline_surface.fill(color1)  # Arka plan rengi
+        timeline_surface.fill(wincolor)  # Arka plan rengi
 
         font = pygame.font.SysFont("Arial", 20)        
         
@@ -84,7 +84,7 @@ class Timeline:
         if self.is_recording and self.recording_buffer and self.active_track is not None:
             track_y = 26 + self.active_track * self.track_height  # Aktif track pozisyonu
             pygame.draw.rect(
-                timeline_surface, (255, 69, 0),  # Geçici track rengi
+                timeline_surface, (temptrackcolor),  # Geçici track rengi
                 (
                     self.recording_buffer[0] - self.offset_x, track_y + 1,
                     self.recording_buffer[1] - self.recording_buffer[0], self.track_height
@@ -104,28 +104,28 @@ class Timeline:
 
                 # Track kutusunu çiz
                 pygame.draw.rect(
-                    timeline_surface, (100, 149, 237), 
+                    timeline_surface, (trackcolor), 
                     (track_x_start + 1, track_y+1, track_width, self.track_height)
                 )
                 self.draw_waveform(
                     timeline_surface, track,
                     track_x_start, track_y,
                     track_width, self.track_height,
-                    color=(255, 0, 0)  # Dalga formu rengi
+                    color=wavecolor  # Dalga formu rengi
                 )
                 
             # Her track'in altına yatay çizgi ekle
             if i < len(tracks) - 1:  # Son track için çizgi çizme
                 line_y = track_y + self.track_height
-                pygame.draw.line(timeline_surface, color2, (0, line_y), (width, line_y), 1)
+                pygame.draw.line(timeline_surface, linecolor, (0, line_y), (width, line_y), 1)
 
 
         # Zaman çizelgesi sütunlarını çiz
         for col in range(0, int(total_length_px), int(self.unit_width)):
             pos_x = col - self.offset_x
             if 0 <= pos_x <= width:
-                pygame.draw.line(timeline_surface, color2, (pos_x, 0), (pos_x, height))  # Dikey çizgi
-                pygame.draw.line(timeline_surface, color2, (0, 26), (pos_x + 300, 26)) 
+                pygame.draw.line(timeline_surface, linecolor, (pos_x, 0), (pos_x, height))  # Dikey çizgi
+                pygame.draw.line(timeline_surface, linecolor, (0, 26), (pos_x + 300, 26)) 
                 # Sütun üzerindeki zamanı yaz
                 text = font.render(str(col // self.unit_width + 1), True, "white")
                 text_rect = text.get_rect(topleft=(pos_x+1, 5))

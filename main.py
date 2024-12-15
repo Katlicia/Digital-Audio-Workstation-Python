@@ -298,14 +298,13 @@ stream.start()
 volume_level = 1.0  # Başlangıç seviyesi (tam ses)
 
 theme = darkTheme
-rectcolor = darkTheme[3]
-linecolor = darkTheme[2]
-menubarcolor = darkTheme[1]
-text_color = (255, 255, 255)
-
-# Ses seviyesi butonları
-volumeUpButton = Button(650, 10, 40, 25, win, rectcolor, linecolor, text_color, "+")
-volumeDownButton = Button(700, 10, 40, 25, win, rectcolor, linecolor, text_color, "-")
+themestr = "darkTheme"
+rectcolor = theme[3] # Track, passive button color
+linecolor = theme[2] # Line, active button color
+wincolor = theme[4] # Win, timeline color
+temptrackcolor = theme[1] # Temp track, waveform color
+timelinetrackcolor = theme[0] # timelinetrack color
+text_color = (255, 255, 255) # Text color
 
 MenuButtonList = [
     # FileButton
@@ -320,10 +319,11 @@ MenuButtonList = [
 
 
 recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.png", win)
-playButton = ImageButton(play_button_x, menu_button_y_pos, "images/play.png", win)
-stopButton = ImageButton(stop_button_x, menu_button_y_pos, "images/pause.png", win)
-resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png", win)
-
+playButton = ImageButton(play_button_x, menu_button_y_pos, f"images/{themestr}/playpassive.png", win)
+stopButton = ImageButton(stop_button_x, menu_button_y_pos, f"images/{themestr}/pausepassive.png", win)
+resetButton = ImageButton(reset_button_x, menu_button_y_pos, f"images/{themestr}/resetpassive.png", win)
+volumeUpButton = ImageButton(volume_up_button_x, menu_button_y_pos, f"images/{themestr}/sounduppassive.png", win)
+volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images/{themestr}/sounddownpassive.png", win)
 
 TrackRectList = [
     Button(3, 70, 167, 56, win, rectcolor, linecolor, text_color, "Track 1", 15),
@@ -371,9 +371,11 @@ while running:
     x, y = win.get_size()
     pygame.key.set_repeat(200, 50)
 
-    rectcolor = theme[3]
-    linecolor = theme[2]
-    menubarcolor = theme[1]
+    timelinetrackcolor = theme[0]
+    temptrackcolor = theme[1]
+    linecolor = theme[2] 
+    rectcolor = theme[3] 
+    wincolor = theme[4]
 
     delta_time = clock.get_time() / 1000
 
@@ -384,16 +386,22 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
                 theme = darkTheme
+                themestr = "darkTheme"
             elif event.key == pygame.K_2:
                 theme = lightTheme
+                themestr = "lightTheme"
             elif event.key == pygame.K_3:
-                theme = strawberyTheme
+                theme = strawberryTheme
+                themestr = "strawberryTheme"
             elif event.key == pygame.K_4:
-                theme = greenTheme
+                theme = greenteaTheme
+                themestr = "greenteaTheme"
             elif event.key == pygame.K_5:
                 theme = mochiTheme
+                themestr = "mochiTheme"
             elif event.key == pygame.K_6:
                 theme = sakuraTheme
+                themestr = "sakuraTheme"
 
         if event.type == pygame.QUIT:
             running = False
@@ -478,9 +486,8 @@ while running:
                 timeline.is_playing = False
                 stop_playing()
                 playing_now = False
-                
-    win.fill(theme[-1])
-    pygame.draw.rect(win, menubarcolor, pygame.Rect(0, 0, x, 40))
+    wincolor = theme[4]
+    win.fill(wincolor)
 
     width = 0
     for MenuButton in MenuButtonList:
@@ -494,29 +501,43 @@ while running:
     recordButton.draw()
     playButton.draw()
     if playButton.isClicked(pos):
-        playButton.setImage("images/onplay.png") 
+        playButton.setImage(f"images/{themestr}/playactive.png") 
     else:
-        playButton.setImage("images/play.png")
+        playButton.setImage(f"images/{themestr}/playpassive.png")
     stopButton.draw()
     if stopButton.isClicked(pos):
-        stopButton.setImage("images/onpause.png")
+        stopButton.setImage(f"images/{themestr}/pauseactive.png")
     else:
-        stopButton.setImage("images/pause.png")
+        stopButton.setImage(f"images/{themestr}/pausepassive.png")
     resetButton.draw()
     if resetButton.isClicked(pos):
-        resetButton.setImage("images/onreset.png")
+        resetButton.setImage(f"images/{themestr}/resetactive.png")
     else:
-        resetButton.setImage("images/reset.png")
+        resetButton.setImage(f"images/{themestr}/resetpassive.png")
+    volumeUpButton.draw()
+    if volumeUpButton.isClicked(pos):
+        volumeUpButton.setImage(f"images/{themestr}/soundupactive.png")
+    else:
+        volumeUpButton.setImage(f"images/{themestr}/sounduppassive.png")
+    volumeDownButton.draw()
+    if volumeDownButton.isClicked(pos):
+        volumeDownButton.setImage(f"images/{themestr}/sounddownactive.png")
+    else:
+        volumeDownButton.setImage(f"images/{themestr}/sounddownpassive.png")
+
 
     menuFrameRect = pygame.Rect(menu_button_start_pos_x, menu_button_y_pos, width + 2.5, menu_button_height)
     pygame.draw.rect(win, linecolor, menuFrameRect, gui_line_border)
     
+    volumeFrameRect = pygame.Rect(volume_up_button_x, menu_button_y_pos, 25 * 2 - 1, menu_button_height)
+    pygame.draw.rect(win, linecolor, volumeFrameRect, gui_line_border)
+
     controlFrameRect = pygame.Rect(play_button_x, menu_button_y_pos, 25 * 3 - 1, menu_button_height)
     pygame.draw.rect(win, linecolor, controlFrameRect, gui_line_border)
     
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)  # Sabit değerlerle tanımla
     pygame.draw.rect(win, linecolor, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, tracks, sample_rate, rectcolor, linecolor)
+    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, tracks, sample_rate, rectcolor, linecolor, temptrackcolor, timelinetrackcolor, temptrackcolor)
 
     trackFrameLine = pygame.draw.line(win, linecolor, (0.5, 69), (300, 69))
     text = font.render("Tracks", True, text_color)
@@ -552,9 +573,6 @@ while running:
         soloButton.text_color = text_color
         soloButton.draw()
         soloButton.isClicked(pos)
-
-    volumeUpButton.draw()
-    volumeDownButton.draw()
 
     pygame.display.update()
     
