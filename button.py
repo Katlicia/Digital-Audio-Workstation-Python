@@ -19,15 +19,17 @@ class ImageButton:
         self.image = pygame.image.load(image)
 
 class Button:
-    def __init__(self, x, y, width, height, win, text=None, font_size=24, color="black", text_color="white"):
+    def __init__(self, x, y, width, height, win, passive_color, active_color, text_color, text=None, font_size=24):
         self.rect = pygame.Rect(x, y, width, height)
         self.width = width
         self.height = height
         self.win = win
         self.text = text
         self.font = pygame.font.SysFont("Arial", font_size)
-        self.color = color
+        self.passive_color = passive_color
+        self.active_color = active_color
         self.text_color = text_color
+        self.color = self.passive_color
         self.active = False
 
     def draw(self):
@@ -46,10 +48,10 @@ class Button:
 
     def isClicked(self, mouse_pos):
         if self.rect.collidepoint(mouse_pos):
-            self.color = (34, 34, 34)
+            self.color = self.active_color
             return self.rect.collidepoint(mouse_pos)
         else:
-            self.color = (99, 99, 99)
+            self.color = self.passive_color
             return self.rect.collidepoint(mouse_pos)
 
 

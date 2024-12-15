@@ -127,7 +127,7 @@ class Timeline:
                 pygame.draw.line(timeline_surface, color2, (pos_x, 0), (pos_x, height))  # Dikey çizgi
                 pygame.draw.line(timeline_surface, color2, (0, 26), (pos_x + 300, 26)) 
                 # Sütun üzerindeki zamanı yaz
-                text = font.render(str(col // self.unit_width + 1), True, color2)
+                text = font.render(str(col // self.unit_width + 1), True, "white")
                 text_rect = text.get_rect(topleft=(pos_x+1, 5))
                 timeline_surface.blit(text, text_rect)
 

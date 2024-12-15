@@ -91,9 +91,6 @@ def stop_recording():
         print("Recording is not active.")
 
 
-
-
-
 def audio_callback(indata, frames, time, status):
     global current_audio
     if recording:
@@ -102,9 +99,6 @@ def audio_callback(indata, frames, time, status):
     else:
         pass
         # print("Recording is inactive.")
-
-
-
 
 
 def play_selected_track():
@@ -303,23 +297,28 @@ stream.start()
 # Ses seviyesi değişkeni
 volume_level = 1.0  # Başlangıç seviyesi (tam ses)
 
-# Ses seviyesi butonları
-volumeUpButton = Button(650, 10, 40, 25, win, "+")
-volumeDownButton = Button(700, 10, 40, 25, win, "-")
-
 color1 = grey
 color2 = dark_grey
-color3 = "grey"
+
+theme = darkTheme
+rectcolor = darkTheme[3]
+linecolor = darkTheme[2]
+menubarcolor = darkTheme[1]
+text_color = darkTheme[-1]
+
+# Ses seviyesi butonları
+volumeUpButton = Button(650, 10, 40, 25, win, rectcolor, linecolor, text_color, "+")
+volumeDownButton = Button(700, 10, 40, 25, win, rectcolor, linecolor, text_color, "-")
 
 MenuButtonList = [
     # FileButton
-    Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, "FILE", menu_button_font_size, color1),
+    Button(menu_button_start_pos_x, menu_button_y_pos, menu_button_width, menu_button_height, win, rectcolor, linecolor, text_color, "FILE", menu_button_font_size),
     # EditButton
-    Button(menu_button_start_pos_x+menu_button_width, menu_button_y_pos, menu_button_width, menu_button_height, win, "EDIT", menu_button_font_size, color1),
+    Button(menu_button_start_pos_x+menu_button_width, menu_button_y_pos, menu_button_width, menu_button_height, win, rectcolor, linecolor, text_color, "EDIT", menu_button_font_size),
     # SaveButton 
-    Button(menu_button_start_pos_x+menu_button_width*2, menu_button_y_pos, menu_button_width, menu_button_height, win, "SAVE", menu_button_font_size, color1),
+    Button(menu_button_start_pos_x+menu_button_width*2, menu_button_y_pos, menu_button_width, menu_button_height, win, rectcolor, linecolor, text_color, "SAVE", menu_button_font_size),
     # ThemeButton
-    Button(menu_button_start_pos_x+menu_button_width*3, menu_button_y_pos, menu_button_width+5, menu_button_height, win, "THEME", menu_button_font_size, color1)
+    Button(menu_button_start_pos_x+menu_button_width*3, menu_button_y_pos, menu_button_width+5, menu_button_height, win, rectcolor, linecolor, text_color, "THEME", menu_button_font_size)
 ]
 
 
@@ -330,42 +329,42 @@ resetButton = ImageButton(reset_button_x, menu_button_y_pos, "images/reset.png",
 
 
 TrackRectList = [
-    Button(3, 70, 167, 56, win, "Track 1", 15, "white", "black"),
-    Button(3, 127, 167, 56, win, "Track 2", 15, "white", "black"),
-    Button(3, 184, 167, 56, win, "Track 3", 15, "white", "black"),
-    Button(3, 241, 167, 56, win, "Track 4", 15, "white", "black"),
-    Button(3, 298, 167, 56, win, "Track 5", 15, "white", "black"),
-    Button(3, 355, 167, 56, win, "Track 6", 15, "white", "black"),
-    Button(3, 412, 167, 56, win, "Track 7", 15, "white", "black"),
-    Button(3, 469, 167, 56, win, "Track 8", 15, "white", "black"),
-    Button(3, 526, 167, 56, win, "Track 9", 15, "white", "black"),
-    Button(3, 583, 167, 53, win, "Track 10", 15, "white", "black")
+    Button(3, 70, 167, 56, win, rectcolor, linecolor, text_color, "Track 1", 15),
+    Button(3, 127, 167, 56, win, rectcolor, linecolor, text_color, "Track 2", 15),
+    Button(3, 184, 167, 56, win, rectcolor, linecolor, text_color, "Track 3", 15),
+    Button(3, 241, 167, 56, win, rectcolor, linecolor, text_color, "Track 4", 15),
+    Button(3, 298, 167, 56, win, rectcolor, linecolor, text_color, "Track 5", 15),
+    Button(3, 355, 167, 56, win, rectcolor, linecolor, text_color, "Track 6", 15),
+    Button(3, 412, 167, 56, win, rectcolor, linecolor, text_color, "Track 7", 15),
+    Button(3, 469, 167, 56, win, rectcolor, linecolor, text_color, "Track 8", 15),
+    Button(3, 526, 167, 56, win, rectcolor, linecolor, text_color, "Track 9", 15),
+    Button(3, 583, 167, 53, win, rectcolor, linecolor, text_color, "Track 10", 15)
 ]
 
 TrackMuteButtonList = [
-    Button(110, 98, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 155, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 212, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 269, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 326, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 383, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 440, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 497, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 554, 20, 20, win, "M", 15, color1, "white"),
-    Button(110, 611, 20, 20, win, "M", 15, color1, "white")
+    Button(110, 98, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 155, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 212, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 269, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 326, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 383, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 440, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 497, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 554, 20, 20, win, rectcolor, linecolor, text_color, "M", 15),
+    Button(110, 611, 20, 20, win, rectcolor, linecolor, text_color, "M", 15)
 ]
 
 TrackSoloButtonList = [
-    Button(132, 98, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 155, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 212, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 269, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 326, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 383, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 440, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 497, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 554, 20, 20, win, "S", 15, color1, "white"),
-    Button(132, 611, 20, 20, win, "S", 15, color1, "white")
+    Button(132, 98, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 155, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 212, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 269, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 326, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 383, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 440, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 497, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 554, 20, 20, win, rectcolor, linecolor, text_color, "S", 15),
+    Button(132, 611, 20, 20, win, rectcolor, linecolor, text_color, "S", 15)
 ]
 
 
@@ -377,10 +376,6 @@ while running:
     # print(f"Recording: {recording}, Current Audio Length: {len(current_audio)}")
 
     delta_time = clock.get_time() / 1000
-
-    color1 = grey
-    color2 = dark_grey
-    color3 = "grey"
 
     timeline.update_cursor(delta_time)
 
@@ -432,7 +427,7 @@ while running:
 
             for button in TrackRectList:  # TrackRectList içindeki her bir butonu kontrol et
                 # Yazı alanını hesapla
-                text_surface = button.font.render(button.text, True, pygame.Color('black'))
+                text_surface = button.font.render(button.text, True, text_color)
                 text_rect = text_surface.get_rect(topleft=button.rect.topleft)
 
                 # Eğer mouse pozisyonu text alanına denk geliyorsa
@@ -469,8 +464,8 @@ while running:
                 stop_playing()
                 playing_now = False
                 
-    win.fill("grey")
-    pygame.draw.rect(win, light_blue, pygame.Rect(0, 0, x, 40))
+    win.fill(color1)
+    pygame.draw.rect(win, menubarcolor, pygame.Rect(0, 0, x, 40))
 
     width = 0
     for MenuButton in MenuButtonList:
@@ -496,22 +491,22 @@ while running:
         resetButton.setImage("images/reset.png")
 
     menuFrameRect = pygame.Rect(menu_button_start_pos_x, menu_button_y_pos, width + 2.5, menu_button_height)
-    pygame.draw.rect(win, color2, menuFrameRect, gui_line_border)
+    pygame.draw.rect(win, linecolor, menuFrameRect, gui_line_border)
     
     controlFrameRect = pygame.Rect(play_button_x, menu_button_y_pos, 25 * 3 - 1, menu_button_height)
-    pygame.draw.rect(win, color2, controlFrameRect, gui_line_border)
+    pygame.draw.rect(win, linecolor, controlFrameRect, gui_line_border)
     
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)  # Sabit değerlerle tanımla
-    pygame.draw.rect(win, color2, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, tracks, sample_rate, color3, color2)
+    pygame.draw.rect(win, linecolor, timelineFrameRect, gui_line_border + 1)
+    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, tracks, sample_rate, rectcolor, linecolor)
 
-    trackFrameLine = pygame.draw.line(win, color2, (0.5, 69), (300, 69))
-    text = font.render("Tracks", True, color2)
+    trackFrameLine = pygame.draw.line(win, linecolor, (0.5, 69), (300, 69))
+    text = font.render("Tracks", True, text_color)
     text_rect = text.get_rect(center=(85, 55))
     win.blit(text, text_rect)
 
     for i in range(1, 10):
-        pygame.draw.line(win, color2, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
+        pygame.draw.line(win, linecolor, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
 
     for i, trackRect in enumerate(TrackRectList):
         if editing_track == i:
@@ -522,8 +517,8 @@ while running:
             trackRect.drawLeft()           
     
     for muteButton in TrackMuteButtonList:
-        pygame.draw.rect(win, color2, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
-        pygame.draw.line(win, color2, (muteButton.rect.x + muteButton.width, muteButton.rect.y - gui_line_border), (muteButton.rect.x + muteButton.width, muteButton.rect.y + 21), gui_line_border)
+        pygame.draw.rect(win, linecolor, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
+        pygame.draw.line(win, linecolor, (muteButton.rect.x + muteButton.width, muteButton.rect.y - gui_line_border), (muteButton.rect.x + muteButton.width, muteButton.rect.y + 21), gui_line_border)
         muteButton.draw()
         muteButton.isClicked(pos)
 
