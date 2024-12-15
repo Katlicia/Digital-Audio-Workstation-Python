@@ -297,14 +297,11 @@ stream.start()
 # Ses seviyesi değişkeni
 volume_level = 1.0  # Başlangıç seviyesi (tam ses)
 
-color1 = grey
-color2 = dark_grey
-
 theme = darkTheme
 rectcolor = darkTheme[3]
 linecolor = darkTheme[2]
 menubarcolor = darkTheme[1]
-text_color = darkTheme[-1]
+text_color = (255, 255, 255)
 
 # Ses seviyesi butonları
 volumeUpButton = Button(650, 10, 40, 25, win, rectcolor, linecolor, text_color, "+")
@@ -373,13 +370,31 @@ timeline = Timeline()
 while running:
     x, y = win.get_size()
     pygame.key.set_repeat(200, 50)
-    # print(f"Recording: {recording}, Current Audio Length: {len(current_audio)}")
+
+    rectcolor = theme[3]
+    linecolor = theme[2]
+    menubarcolor = theme[1]
 
     delta_time = clock.get_time() / 1000
 
     timeline.update_cursor(delta_time)
 
     for event in pygame.event.get():
+        
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_1:
+                theme = darkTheme
+            elif event.key == pygame.K_2:
+                theme = lightTheme
+            elif event.key == pygame.K_3:
+                theme = strawberyTheme
+            elif event.key == pygame.K_4:
+                theme = greenTheme
+            elif event.key == pygame.K_5:
+                theme = mochiTheme
+            elif event.key == pygame.K_6:
+                theme = sakuraTheme
+
         if event.type == pygame.QUIT:
             running = False
         pos = pygame.mouse.get_pos()
@@ -464,11 +479,14 @@ while running:
                 stop_playing()
                 playing_now = False
                 
-    win.fill(color1)
+    win.fill(theme[-1])
     pygame.draw.rect(win, menubarcolor, pygame.Rect(0, 0, x, 40))
 
     width = 0
     for MenuButton in MenuButtonList:
+        MenuButton.passive_color = rectcolor
+        MenuButton.active_color = linecolor
+        MenuButton.text_color = text_color
         MenuButton.draw()
         MenuButton.isClicked(pos)
         width += MenuButton.width
@@ -509,20 +527,29 @@ while running:
         pygame.draw.line(win, linecolor, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
 
     for i, trackRect in enumerate(TrackRectList):
+        trackRect.passive_color = rectcolor
+        trackRect.active_color = linecolor
+        trackRect.text_color = text_color
         if editing_track == i:
-            pygame.draw.rect(win, pygame.Color('white'), trackRect.rect)  # Düzenleme sırasında beyaz arka plan
+            pygame.draw.rect(win, trackRect.passive_color, trackRect.rect)  # Düzenleme sırasında beyaz arka plan
             text_surface = font.render(trackRect.text, True, pygame.Color('black'))
             win.blit(text_surface, (trackRect.rect.x + 5, trackRect.rect.y + (trackRect.rect.height - text_surface.get_height()) // 2))
         else:
             trackRect.drawLeft()           
     
     for muteButton in TrackMuteButtonList:
+        muteButton.passive_color = rectcolor
+        muteButton.active_color = linecolor
+        muteButton.text_color = text_color
         pygame.draw.rect(win, linecolor, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
         pygame.draw.line(win, linecolor, (muteButton.rect.x + muteButton.width, muteButton.rect.y - gui_line_border), (muteButton.rect.x + muteButton.width, muteButton.rect.y + 21), gui_line_border)
         muteButton.draw()
         muteButton.isClicked(pos)
 
     for soloButton in TrackSoloButtonList:
+        soloButton.passive_color = rectcolor
+        soloButton.active_color = linecolor
+        soloButton.text_color = text_color
         soloButton.draw()
         soloButton.isClicked(pos)
 
