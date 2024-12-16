@@ -5,6 +5,8 @@ import sounddevice as sd
 from pydub import AudioSegment
 from tkinter import filedialog
 import tkinter as tk
+import librosa
+from scipy.signal import fftconvolve
 
 class AudioManager:
     def __init__(self, sample_rate=44100, max_tracks=10):
@@ -22,6 +24,7 @@ class AudioManager:
         self.muted_tracks = [False] * max_tracks
         self.solo_tracks = [False] * max_tracks
         self.loaded_from_file = [False] * max_tracks
+        self.effects = [{} for _ in range(max_tracks)]
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -137,10 +140,6 @@ class AudioManager:
 
 
     def export_tracks_to_file(self):
-        """
-        Mixes all tracks and exports it.
-        File name and location will be selected with tkinter.
-        """
         if not any(track is not None for track in self.tracks):
             print("No tracks to export.")
             return
@@ -155,11 +154,14 @@ class AudioManager:
 
         for i, track in enumerate(self.tracks):
             if track is not None:
-                if len(track.shape) > 1:
-                    track = np.mean(track, axis=1)
+                # Apply effects before exporting
+                track_with_effects = self.apply_effects(track, i)
+
+                if len(track_with_effects.shape) > 1:
+                    track_with_effects = np.mean(track_with_effects, axis=1)
 
                 track_start_in_samples = int(self.timeline.track_starts[i] / self.timeline.unit_width * self.sample_rate)
-                mixed_audio[track_start_in_samples:track_start_in_samples + len(track)] += track
+                mixed_audio[track_start_in_samples:track_start_in_samples + len(track_with_effects)] += track_with_effects
 
         if np.max(np.abs(mixed_audio)) > 0:
             mixed_audio /= np.max(np.abs(mixed_audio))
@@ -252,3 +254,73 @@ class AudioManager:
             print(f"Track {track_index + 1} removed.")
         else:
             print("Invalid track.")
+
+    def apply_effects(self, track, track_index):
+        """
+        Applies all effects to the given track.
+        """
+        effects = self.effects[track_index]
+
+        # Apply effects in order
+        if "volume" in effects:
+            track = self.apply_volume(track, effects["volume"])
+        if "equalizer" in effects:
+            track = self.apply_equalizer(track, self.sample_rate, **effects["equalizer"])
+        if "reverb" in effects:
+            track = self.apply_reverb(track, effects["reverb"])
+        if "delay" in effects:
+            track = self.apply_delay(track, self.sample_rate, **effects["delay"])
+        if "pitch_shift" in effects:
+            track = self.apply_pitch_shift(track, self.sample_rate, effects["pitch_shift"])
+        if "distortion" in effects:
+            track = self.apply_distortion(track, effects["distortion"])
+        if "pan" in effects:
+            track = self.apply_pan(track, effects["pan"])
+        
+        return track
+
+
+    # Volume (Gain) Effect
+    def apply_volume(self, track, gain=1.0):
+        return track * gain
+
+    # Equalizer (Low, Mid, High Frequencies)
+    def apply_equalizer(self, track, sample_rate, low_gain=1.0, mid_gain=1.0, high_gain=1.0):
+        from scipy.signal import butter, sosfilt
+
+        def bandpass_filter(data, lowcut, highcut, sample_rate):
+            sos = butter(10, [lowcut / (0.5 * sample_rate), highcut / (0.5 * sample_rate)], btype='band', output='sos')
+            return sosfilt(sos, data)
+
+        low = bandpass_filter(track, 20, 300, sample_rate) * low_gain
+        mid = bandpass_filter(track, 300, 3000, sample_rate) * mid_gain
+        high = bandpass_filter(track, 3000, 20000, sample_rate) * high_gain
+
+        return low + mid + high
+
+    # Reverb Effect
+    def apply_reverb(self, track, intensity=0.3, sample_rate=44100, max_length=2.0):
+        track = track / np.max(np.abs(track))
+        max_decay_samples = int(sample_rate * max_length)
+        decay = np.linspace(1, 0, int(len(track) * intensity))[:max_decay_samples]
+        decay /= np.sum(decay)
+        reverberated = fftconvolve(track, decay, mode="full")[:len(track)]
+        reverberated /= np.max(np.abs(reverberated))
+        return reverberated
+
+    # Delay Effect
+    def apply_delay(self, track, sample_rate, delay_time=0.3, feedback=0.5):
+        delay_samples = int(delay_time * sample_rate)
+        delayed_track = np.zeros(len(track) + delay_samples)
+        delayed_track[:len(track)] += track
+        delayed_track[delay_samples:] += track * feedback
+        return delayed_track[:len(track)]
+
+    # Pitch Shift Effect
+    def apply_pitch_shift(self, track, sample_rate, semitones=0):
+        return librosa.effects.pitch_shift(track, sr=sample_rate, n_steps=semitones)
+
+    # Distortion Effect
+    def apply_distortion(self, track, intensity=1.0):
+        return np.tanh(track * intensity)
+

@@ -107,6 +107,27 @@ TrackSoloButtonList = [
 ]
 
 
+
+# fx_surface = pygame.Surface((800 - gui_line_border, 300 - gui_line_border))
+# fx_surface.fill(rectcolor)  # FX yüzeyinin arka plan rengini belirle
+
+# effect_buttons = [
+#     Button(10, 10, 120, 30, fx_surface, rectcolor, linecolor, text_color, "Reverb", 15),
+#     Button( 10, 50, 120, 30, fx_surface, rectcolor, linecolor, text_color, "Delay", 15),
+#     Button( 10, 90, 120, 30, fx_surface, rectcolor, linecolor, text_color, "Pitch Shift", 15),
+#     Button(10, 130, 120, 30, fx_surface, rectcolor, linecolor, text_color, "Distortion", 15),
+#     Button(10, 170, 120, 30, fx_surface, rectcolor, linecolor, text_color, "Volume", 15),
+#     Button( 10, 210, 120, 30, fx_surface, rectcolor, linecolor, text_color, "Equalizer", 15),
+# ]
+
+
+# Gain (gain 0.0 - 2.0)
+# EQ (low_gain = 1.0, mid_gan = 1.0, high_gain = 1.0) 0.0 - 2.0 1 Değiştirmez
+# Reverb (intensity = 0.0 - 1.0, max_length = 2.0 saniye)
+# Delay (delay_time = 0.1 - 1.0 saniye, feedback = 0.0 - 1.0 tam yankı)
+# Pitch shift (semitones= 0 değişmez) - 12 bir oktav düşür + 12 bir oktav yükselt
+# Distortion (intensity = 0.5 - 5.0, )
+
 timeline = Timeline()
 audio_manager = AudioManager()
 audio_manager.timeline = timeline
@@ -355,7 +376,6 @@ while running:
     for i, trackRect in enumerate(TrackRectList):
         trackRect.passive_color = rectcolor
         trackRect.active_color = linecolor
-        trackRect.text_color = text_color
         if editing_track == i:
             pygame.draw.rect(win, trackRect.passive_color, trackRect.rect)
             text_surface = font.render(trackRect.text, True, text_color)
@@ -368,7 +388,6 @@ while running:
     for i, muteButton in enumerate(TrackMuteButtonList):
         muteButton.passive_color = rectcolor if not audio_manager.muted_tracks[TrackMuteButtonList.index(muteButton)] else linecolor
         muteButton.active_color = linecolor
-        muteButton.text_color = text_color
         pygame.draw.rect(win, linecolor, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
         pygame.draw.line(win, linecolor, (muteButton.rect.x + muteButton.width, muteButton.rect.y - gui_line_border), (muteButton.rect.x + muteButton.width, muteButton.rect.y + 21), gui_line_border)
         muteButton.draw()
@@ -377,7 +396,6 @@ while running:
     for i, soloButton in enumerate(TrackSoloButtonList):
         soloButton.passive_color = rectcolor if not audio_manager.solo_tracks[TrackSoloButtonList.index(soloButton)] else linecolor
         soloButton.active_color = linecolor
-        soloButton.text_color = text_color
         soloButton.draw()
         soloButton.isClicked(pos)
 
@@ -389,6 +407,26 @@ while running:
         for theme_button in theme_menu_buttons:
             theme_button.drawLeft()
     
+    # fx_frame_rect = pygame.Rect(x / 2 - 400 - gui_line_border, timeline_y + timeline_height + 25 - gui_line_border, 800 + gui_line_border, 300 + gui_line_border)
+    # pygame.draw.rect(win, rectcolor, fx_frame_rect)
+
+    # fx_rect = pygame.Rect(x / 2 - 400, timeline_y + timeline_height + 25, 800 - gui_line_border, 300 - gui_line_border)
+    # fx_surface.fill(linecolor)
+
+    # font2 = pygame.font.SysFont("Arial", 300)
+    # text = font2.render("FX", True, rectcolor)
+    # text_rect = text.get_rect(center=(400, 150))
+    # fx_surface.blit(text, text_rect)
+
+    # for effectButton in effect_buttons:
+    #     effectButton.passive_color = rectcolor
+    #     effectButton.active_color = linecolor
+    #     effectButton.isClicked(pos)
+    #     print(effectButton.rect.x)
+    #     effectButton.draw()
+
+    # win.blit(fx_surface, fx_rect.topleft)
+
     update_menu_colors()
     pygame.display.update()
     

@@ -6,3 +6,4 @@ soundfile
 tkinter
 wave
 os
+librosa
