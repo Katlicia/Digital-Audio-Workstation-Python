@@ -1,7 +1,10 @@
+import os
 import wave
 import numpy as np
 import sounddevice as sd
 from pydub import AudioSegment
+from tkinter import filedialog
+import tkinter as tk
 
 class AudioManager:
     def __init__(self, sample_rate=44100, max_tracks=10):
@@ -18,6 +21,7 @@ class AudioManager:
         self.timeline = None
         self.muted_tracks = [False] * max_tracks
         self.solo_tracks = [False] * max_tracks
+        self.loaded_from_file = [False] * max_tracks
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -75,16 +79,6 @@ class AudioManager:
         if self.recording:
             self.current_audio.append(indata.copy())
 
-    def play_selected_track(self):
-        if self.selected_track is not None and self.tracks[self.selected_track] is not None:
-            self.playing_audio = self.tracks[self.selected_track]
-            self.current_audio_position = 0
-
-            if self.stream is not None:
-                self.stream.close()
-            self.stream = sd.OutputStream(callback=self.audio_playback_callback, samplerate=self.sample_rate, channels=1)
-            self.stream.start()
-
     def stop_playing(self):
         self.playing_audio = None
         if self.stream is not None:
@@ -108,15 +102,15 @@ class AudioManager:
 
             mixed_audio = np.zeros(max_length, dtype=np.float32)
 
-            # Solo kontrolü
+            # Solo control
             solo_active = any(self.solo_tracks)
             
             for i, track in enumerate(self.tracks):
                 if track is not None:
                     if solo_active and not self.solo_tracks[i]:
-                        continue  # Eğer solo aktifse, sadece solo track'leri çal
+                        continue  # If solo exists play only the solo audio.
                     if not solo_active and self.muted_tracks[i]:
-                        continue  # Eğer solo yoksa, mute track'leri atla
+                        continue  # If solo doesn't exist pass mute tracks.
                     
                     if len(track.shape) > 1:
                         track = np.mean(track, axis=1)
@@ -142,7 +136,11 @@ class AudioManager:
             self.stream.start()
 
 
-    def export_tracks_to_file(self, filename="output", filetype="wav"):
+    def export_tracks_to_file(self):
+        """
+        Mixes all tracks and exports it.
+        File name and location will be selected with tkinter.
+        """
         if not any(track is not None for track in self.tracks):
             print("No tracks to export.")
             return
@@ -168,40 +166,61 @@ class AudioManager:
 
         output_audio = (mixed_audio * 32767).astype(np.int16)
 
+        # Tkinter file dialog for saving the file
+        root = tk.Tk()
+        root.withdraw()  # Hide the main Tkinter window
+
+        # Ask the user for the file name and format
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".wav",
+            filetypes=[("WAV files", "*.wav"), ("MP3 files", "*.mp3")],
+            title="Save As"
+        )
+
+        if not file_path:  # If user cancels
+            print("Export cancelled.")
+            return
+
+        filetype = file_path.split('.')[-1].lower()  # Determine the file type by extension
+
         if filetype == "wav":
-            output_file = f"{filename}.wav"
-            with wave.open(output_file, "w") as wf:
+            with wave.open(file_path, "w") as wf:
                 wf.setnchannels(1)
                 wf.setsampwidth(2)
                 wf.setframerate(self.sample_rate)
                 wf.writeframes(output_audio.tobytes())
         elif filetype == "mp3":
-            temp_wav_file = f"{filename}_temp.wav"
-            with wave.open(temp_wav_file, "w") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(self.sample_rate)
-                wf.writeframes(output_audio.tobytes())
-            audio = AudioSegment.from_wav(temp_wav_file)
-            audio.export(f"{filename}.mp3", format="mp3")
+            temp_wav_file = file_path.replace(".mp3", "_temp.wav")
+            try:
+                with wave.open(temp_wav_file, "w") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(self.sample_rate)
+                    wf.writeframes(output_audio.tobytes())
+                audio = AudioSegment.from_wav(temp_wav_file)
+                audio.export(file_path, format="mp3")
+            finally:
+                # Remove the temp file
+                if os.path.exists(temp_wav_file):
+                    os.remove(temp_wav_file)
+                    print(f"Temporary file {temp_wav_file} deleted.")
         else:
             print(f"Unsupported file type: {filetype}")
             return
 
-        print(f"Tracks exported to {filename}.{filetype}")
+        print(f"Tracks exported to {file_path}")
 
     def adjust_volume(self, change):
         self.volume_level = max(0.0, min(1.50, self.volume_level + change))
 
-    def load_audio_file(self, file_path, track_index):
+    def load_audio_file(self, file_path):
         """
-        Belirtilen track'e bir ses dosyasını yükler.
+        Loads an audio file to the next empty track.
         Args:
-            file_path (str): Yüklemek istenen ses dosyasının yolu.
-            track_index (int): Hangi track'e yükleneceği.
+            file_path (str): File path of the desired audio.
         """
         try:
-            # MP3 veya WAV olarak dosyayı yükle
+            # Load MP3 or WAV file
             if file_path.endswith(".mp3"):
                 audio = AudioSegment.from_mp3(file_path)
             elif file_path.endswith(".wav"):
@@ -210,12 +229,13 @@ class AudioManager:
                 print("Unsupported file format. Only MP3 and WAV are supported.")
                 return
 
-            # Pydub verisini numpy array'e dönüştür
+            #Convert pydub data to numpy array.
             audio = audio.set_frame_rate(self.sample_rate).set_channels(1)
-            samples = np.array(audio.get_array_of_samples(), dtype=np.float32) / 32768.0  # Normalize et
+            samples = np.array(audio.get_array_of_samples(), dtype=np.float16) / 32768.0
 
-            # Track'e yükle
-            self.tracks[track_index] = samples
-            print(f"Audio file loaded into track {track_index}.")
+            # Load to track.
+            self.tracks[self.find_next_empty_track()] = samples
+            self.loaded_from_file[self.find_next_empty_track()] = True
+            print(f"Audio file loaded into track {self.find_next_empty_track()}.")
         except Exception as e:
             print(f"Error loading audio file: {e}")

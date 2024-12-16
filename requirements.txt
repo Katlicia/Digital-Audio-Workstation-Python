@@ -2,4 +2,7 @@ pygame
 pydub
 sounddevice
 numpy
-save
+soundfile
+tkinter
+wave
+os

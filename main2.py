@@ -1,12 +1,10 @@
 import pygame
 from button import Button, ImageButton
 from config import *
-import wave
 from timeline import Timeline
-import sounddevice as sd
-import numpy as np
-from pydub import AudioSegment
 from audio_utils import AudioManager
+import tkinter as tk
+from tkinter import filedialog
 
 pygame.init()
 
@@ -44,7 +42,9 @@ volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images
 file_menu_open = False
 file_menu_buttons = [
     Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
+
 ]
 
 theme_menu_open = False
@@ -123,6 +123,33 @@ def update_menu_colors():
         theme_button.active_color = linecolor
         theme_button.text_color = text_color
 
+def load_track(track_index):
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav")])
+    if file_path:
+        audio_manager.load_audio_file(file_path, track_index)
+        print(f"Track {track_index} için dosya başarıyla yüklendi.")
+    else:
+        print("Dosya seçimi iptal edildi.")
+
+def load_track():
+    """
+    Sıradaki boş track'e bir ses dosyasını yükler.
+    """
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav")])
+    if file_path:
+        next_empty_track = audio_manager.find_next_empty_track()  # Sıradaki boş track'i bul
+        if next_empty_track is not None:
+            audio_manager.load_audio_file(file_path, next_empty_track)  # Track'e dosyayı yükle
+            print(f"Track {next_empty_track} için dosya başarıyla yüklendi.")
+        else:
+            print("Warning: Tüm trackler dolu, yeni bir track'e yüklenemiyor.")
+    else:
+        print("Dosya seçimi iptal edildi.")
+
 while running:
     x, y = win.get_size()
     pygame.key.set_repeat(200, 50)
@@ -174,10 +201,11 @@ while running:
             elif file_menu_open:
                 for file_button in file_menu_buttons:
                     if file_button.isClicked(pos):
-                        if file_button.text == "Export as WAV":
-                            audio_manager.export_tracks_to_file(filename="output", filetype="wav")
-                        elif file_button.text == "Export as MP3":
-                            audio_manager.export_tracks_to_file(filename="output", filetype="mp3")
+                        if file_button.text == "Export as WAV"or file_button.text == "Export as MP3":
+                            audio_manager.export_tracks_to_file()
+                        elif file_button.text == "Import as WAV/MP3":
+                            load_track()
+
                 file_menu_open = False
 
             elif MenuButtonList[0].isClicked(pos):
@@ -263,20 +291,20 @@ while running:
                 else:
                     if len(TrackRectList[editing_track].text) < 15:
                         TrackRectList[editing_track].text += event.unicode
-
-            if event.key == pygame.K_SPACE:
-                timeline.is_playing = not timeline.is_playing
-                if playing_now:
+            if editing_track == None:
+                if event.key == pygame.K_SPACE:
+                    timeline.is_playing = not timeline.is_playing
+                    if playing_now:
+                        audio_manager.stop_playing()
+                    else:
+                        audio_manager.play_all_tracks()
+                
+                if event.key == pygame.K_r:
+                    timeline.cursor_position = 0
+                    timeline.is_playing = False
                     audio_manager.stop_playing()
-                else:
-                    audio_manager.play_selected_track()
-                    audio_manager.play_all_tracks()
-            
-            if event.key == pygame.K_r:
-                timeline.cursor_position = 0
-                timeline.is_playing = False
-                audio_manager.stop_playing()
-                playing_now = False
+                    playing_now = False
+
     wincolor = theme[4]
     win.fill(wincolor)
 
@@ -331,7 +359,7 @@ while running:
     
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)
     pygame.draw.rect(win, linecolor, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, audio_manager.tracks, audio_manager.sample_rate, rectcolor, linecolor, temptrackcolor, timelinetrackcolor, temptrackcolor)
+    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, audio_manager.tracks, audio_manager.sample_rate, rectcolor, linecolor, temptrackcolor, timelinetrackcolor, temptrackcolor, audio_manager)
 
     trackFrameLine = pygame.draw.line(win, linecolor, (0.5, 69), (300, 69))
     text = font.render("Tracks", True, text_color)
@@ -379,6 +407,7 @@ while running:
     update_menu_colors()
     pygame.display.update()
     
-    clock.tick(60)
+    clock.tick(144)
+    # print(clock.get_fps())
 
 pygame.quit()
