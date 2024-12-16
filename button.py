@@ -33,7 +33,7 @@ class Button:
         self.active = False
 
     def draw(self):
-        pygame.draw.rect(self.win, self.color, self.rect)
+        pygame.draw.rect(self.win, self.passive_color, self.rect)
         if self.text != None:
             text_surface = self.font.render(self.text, True, self.text_color)
             text_rect = text_surface.get_rect(center = self.rect.center)

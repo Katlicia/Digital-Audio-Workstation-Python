@@ -43,18 +43,18 @@ volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images
 
 file_menu_open = False
 file_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15)
 ]
 
 theme_menu_open = False
 theme_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Dark", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 2, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Light", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 3, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Strawberry", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 4, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Green Tea", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 5, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Mochi", font_size=15), 
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 6, 150, menu_button_height, win, rectcolor, linecolor, text_color, "Sakura", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Dark", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 2, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Light", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 3, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Strawberry", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 4, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Green Tea", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 5, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Mochi", font_size=15), 
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 6, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Sakura", font_size=15)
 ]
 
 MenuButtonList = [
@@ -197,7 +197,6 @@ while running:
 
             if playButton.isClicked(pos) and audio_manager.recording == False:
                 audio_manager.play_all_tracks()
-                audio_manager.play_selected_track()
                 timeline.is_playing = True
                 playing_now = True
 
@@ -219,8 +218,23 @@ while running:
 
             for i, solo in enumerate(TrackSoloButtonList):
                 if solo.isClicked(pos):
-                    if audio_manager.tracks[i] is not None and len(audio_manager.tracks[i]) > 0:
-                        audio_manager.selected_track = i
+                    audio_manager.solo_tracks[i] = not audio_manager.solo_tracks[i]  # Solo durumunu değiştir
+                    # Eğer bir track solo durumundaysa diğer tüm track'lerin solo modunu iptal edin (isteğe bağlı)
+                    if audio_manager.solo_tracks[i]:
+                        solo.passive_color = linecolor
+                        for j in range(len(audio_manager.solo_tracks)):
+                            if j != i:
+                                audio_manager.solo_tracks[j] = False
+                    else:
+                        solo.passive_color = rectcolor
+
+            for i, mute in enumerate(TrackMuteButtonList):
+                if mute.isClicked(pos):
+                    audio_manager.muted_tracks[i] = not audio_manager.muted_tracks[i]
+                    if audio_manager.muted_tracks[i]:
+                        mute.passive_color = linecolor
+                    else:
+                        mute.passive_color = rectcolor
 
             for button in TrackRectList:
                 text_surface = button.font.render(button.text, True, text_color)
@@ -335,8 +349,8 @@ while running:
         else:
             trackRect.drawLeft()           
     
-    for muteButton in TrackMuteButtonList:
-        muteButton.passive_color = rectcolor
+    for i, muteButton in enumerate(TrackMuteButtonList):
+        muteButton.passive_color = rectcolor if not audio_manager.muted_tracks[TrackMuteButtonList.index(muteButton)] else linecolor
         muteButton.active_color = linecolor
         muteButton.text_color = text_color
         pygame.draw.rect(win, linecolor, pygame.Rect(muteButton.rect.x - gui_line_border, muteButton.rect.y - gui_line_border, 46, 24), gui_line_border)
@@ -344,8 +358,8 @@ while running:
         muteButton.draw()
         muteButton.isClicked(pos)
 
-    for soloButton in TrackSoloButtonList:
-        soloButton.passive_color = rectcolor
+    for i, soloButton in enumerate(TrackSoloButtonList):
+        soloButton.passive_color = rectcolor if not audio_manager.solo_tracks[TrackSoloButtonList.index(soloButton)] else linecolor
         soloButton.active_color = linecolor
         soloButton.text_color = text_color
         soloButton.draw()
@@ -353,11 +367,11 @@ while running:
 
     if file_menu_open:
         for file_button in file_menu_buttons:
-            file_button.draw()
+            file_button.drawLeft()
 
     if theme_menu_open:
         for theme_button in theme_menu_buttons:
-            theme_button.draw()
+            theme_button.drawLeft()
     
     update_menu_colors()
     pygame.display.update()

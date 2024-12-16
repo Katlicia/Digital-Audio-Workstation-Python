@@ -16,6 +16,8 @@ class AudioManager:
         self.stream = None
         self.selected_track = None
         self.timeline = None
+        self.muted_tracks = [False] * max_tracks
+        self.solo_tracks = [False] * max_tracks
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -106,8 +108,16 @@ class AudioManager:
 
             mixed_audio = np.zeros(max_length, dtype=np.float32)
 
+            # Solo kontrolü
+            solo_active = any(self.solo_tracks)
+            
             for i, track in enumerate(self.tracks):
                 if track is not None:
+                    if solo_active and not self.solo_tracks[i]:
+                        continue  # Eğer solo aktifse, sadece solo track'leri çal
+                    if not solo_active and self.muted_tracks[i]:
+                        continue  # Eğer solo yoksa, mute track'leri atla
+                    
                     if len(track.shape) > 1:
                         track = np.mean(track, axis=1)
 
@@ -130,6 +140,7 @@ class AudioManager:
                 self.stream.close()
             self.stream = sd.OutputStream(callback=self.audio_playback_callback, samplerate=self.sample_rate, channels=1)
             self.stream.start()
+
 
     def export_tracks_to_file(self, filename="output", filetype="wav"):
         if not any(track is not None for track in self.tracks):
