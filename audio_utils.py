@@ -192,3 +192,30 @@ class AudioManager:
 
     def adjust_volume(self, change):
         self.volume_level = max(0.0, min(1.50, self.volume_level + change))
+
+    def load_audio_file(self, file_path, track_index):
+        """
+        Belirtilen track'e bir ses dosyasını yükler.
+        Args:
+            file_path (str): Yüklemek istenen ses dosyasının yolu.
+            track_index (int): Hangi track'e yükleneceği.
+        """
+        try:
+            # MP3 veya WAV olarak dosyayı yükle
+            if file_path.endswith(".mp3"):
+                audio = AudioSegment.from_mp3(file_path)
+            elif file_path.endswith(".wav"):
+                audio = AudioSegment.from_wav(file_path)
+            else:
+                print("Unsupported file format. Only MP3 and WAV are supported.")
+                return
+
+            # Pydub verisini numpy array'e dönüştür
+            audio = audio.set_frame_rate(self.sample_rate).set_channels(1)
+            samples = np.array(audio.get_array_of_samples(), dtype=np.float32) / 32768.0  # Normalize et
+
+            # Track'e yükle
+            self.tracks[track_index] = samples
+            print(f"Audio file loaded into track {track_index}.")
+        except Exception as e:
+            print(f"Error loading audio file: {e}")

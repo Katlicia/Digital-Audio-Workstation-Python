@@ -218,23 +218,26 @@ while running:
 
             for i, solo in enumerate(TrackSoloButtonList):
                 if solo.isClicked(pos):
-                    audio_manager.solo_tracks[i] = not audio_manager.solo_tracks[i]  # Solo durumunu değiştir
-                    # Eğer bir track solo durumundaysa diğer tüm track'lerin solo modunu iptal edin (isteğe bağlı)
-                    if audio_manager.solo_tracks[i]:
-                        solo.passive_color = linecolor
-                        for j in range(len(audio_manager.solo_tracks)):
-                            if j != i:
-                                audio_manager.solo_tracks[j] = False
-                    else:
-                        solo.passive_color = rectcolor
+                    # Eğer track mute durumundaysa, mute'yi kapat
+                    if audio_manager.muted_tracks[i]:
+                        audio_manager.muted_tracks[i] = False
+                        TrackMuteButtonList[i].passive_color = rectcolor  # Mute pasif rengi
+
+                    # Solo durumunu değiştir
+                    audio_manager.solo_tracks[i] = not audio_manager.solo_tracks[i]
+                    solo.passive_color = linecolor if audio_manager.solo_tracks[i] else rectcolor
 
             for i, mute in enumerate(TrackMuteButtonList):
                 if mute.isClicked(pos):
+                    # Eğer track solo durumundaysa, solo'yu kapat
+                    if audio_manager.solo_tracks[i]:
+                        audio_manager.solo_tracks[i] = False
+                        TrackSoloButtonList[i].passive_color = rectcolor  # Solo pasif rengi
+
+                    # Mute durumunu değiştir
                     audio_manager.muted_tracks[i] = not audio_manager.muted_tracks[i]
-                    if audio_manager.muted_tracks[i]:
-                        mute.passive_color = linecolor
-                    else:
-                        mute.passive_color = rectcolor
+                    mute.passive_color = linecolor if audio_manager.muted_tracks[i] else rectcolor
+
 
             for button in TrackRectList:
                 text_surface = button.font.render(button.text, True, text_color)
