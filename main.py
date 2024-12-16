@@ -40,9 +40,9 @@ volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images
 
 file_menu_open = False
 file_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 100, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
 
 ]
 
@@ -122,16 +122,6 @@ def update_menu_colors():
         theme_button.active_color = linecolor
         theme_button.text_color = text_color
 
-def load_track(track_index):
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav")])
-    if file_path:
-        audio_manager.load_audio_file(file_path, track_index)
-        print(f"Track {track_index} için dosya başarıyla yüklendi.")
-    else:
-        print("Dosya seçimi iptal edildi.")
-
 def load_track():
     """
     Uploads an audio to the next empty track.
@@ -140,14 +130,10 @@ def load_track():
     root.withdraw()
     file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav")])
     if file_path:
-        next_empty_track = audio_manager.find_next_empty_track()  # Sıradaki boş track'i bul
+        next_empty_track = audio_manager.find_next_empty_track()
         if next_empty_track is not None:
-            audio_manager.load_audio_file(file_path, next_empty_track)  # Track'e dosyayı yükle
-            print(f"Track {next_empty_track} için dosya başarıyla yüklendi.")
-        else:
-            print("Warning: Tüm trackler dolu, yeni bir track'e yüklenemiyor.")
-    else:
-        print("Dosya seçimi iptal edildi.")
+            audio_manager.load_audio_file(file_path, next_empty_track)
+
 
 while running:
     x, y = win.get_size()
@@ -169,7 +155,7 @@ while running:
             running = False
 
         timeline.handleScroll(event)
-        timeline.handleClick(event, timeline_x, timeline_y, x, timeline_height)
+        timeline.handleClick(event, timeline_x, timeline_y, x, timeline_height, audio_manager)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -200,7 +186,7 @@ while running:
             elif file_menu_open:
                 for file_button in file_menu_buttons:
                     if file_button.isClicked(pos):
-                        if file_button.text == "Export as WAV"or file_button.text == "Export as MP3":
+                        if file_button.text == "Export as WAV" or file_button.text == "Export as MP3":
                             audio_manager.export_tracks_to_file()
                         elif file_button.text == "Import as WAV/MP3":
                             load_track()
@@ -287,7 +273,7 @@ while running:
                     TrackRectList[editing_track].text = original_text
                     editing_track = None
                 else:
-                    if len(TrackRectList[editing_track].text) < 15:
+                    if len(TrackRectList[editing_track].text) < 25:
                         TrackRectList[editing_track].text += event.unicode
             if editing_track == None:
                 if event.key == pygame.K_SPACE:
@@ -407,6 +393,5 @@ while running:
     pygame.display.update()
     
     clock.tick()
-    print(clock.get_fps())
 
 pygame.quit()

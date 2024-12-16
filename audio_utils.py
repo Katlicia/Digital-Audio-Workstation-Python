@@ -239,3 +239,16 @@ class AudioManager:
             print(f"Audio file loaded into track {track_index}.")
         except Exception as e:
             print(f"Error loading audio file: {e}")
+
+    def delete_track(self, track_index):
+        """
+        Deletes the specified track and resets its data.
+        """
+        if 0 <= track_index < len(self.tracks):
+            self.tracks[track_index] = None # Clear audio data
+            self.timeline.track_starts[track_index] = 0 # Clear start position on timeline
+            self.muted_tracks[track_index] = False
+            self.solo_tracks[track_index] = False
+            print(f"Track {track_index + 1} removed.")
+        else:
+            print("Invalid track.")

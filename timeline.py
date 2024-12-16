@@ -49,14 +49,26 @@ class Timeline:
                     if self.offset_x < 0:
                         self.offset_x = 0
 
-    def handleClick(self, event, timeline_x, timeline_y, timeline_width, timeline_height):
+    def handleClick(self, event, timeline_x, timeline_y, timeline_width, timeline_height, audio_manager):
         """
-        When a click is detected in the timeline, it moves the cursor to the clicked location.
+        Handles mouse clicks on the timeline. Left click moves the cursor.
+        Right click deletes the clicked track.
         """
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Sol tıklama
+        if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = event.pos
+
+            # Check if clicking is in timeline area.
             if timeline_x <= mouse_x <= timeline_x + timeline_width and timeline_y <= mouse_y <= timeline_y + timeline_height:
-                self.cursor_position = mouse_x + self.offset_x - timeline_x
+                # Left click moves cursor.
+                if event.button == 1:
+                    self.cursor_position = mouse_x + self.offset_x - timeline_x
+                
+                # Right click deletes track.
+                elif event.button == 3:
+                    track_index = (mouse_y - 70) // self.track_height  # Calculate track index.
+                    if 0 <= track_index < self.track_count:
+                        if audio_manager.tracks[track_index] is not None:
+                            audio_manager.delete_track(track_index)
 
     def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, wincolor, linecolor, temptrackcolor, trackcolor, wavecolor, audio_manager):
         """
