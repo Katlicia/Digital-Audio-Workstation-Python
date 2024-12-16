@@ -136,9 +136,10 @@ class Timeline:
 
     def update_cursor(self, delta_time):
         """
-        Updates cursor's position.
+        Updates cursor's position and ensures the timeline scrolls smoothly to keep the cursor visible.
         """
         if self.is_playing:
+            # Cursor movement
             self.cursor_position += delta_time * self.unit_width
             self.cursor_position %= (self.dynamic_length * self.unit_width)
 
@@ -148,13 +149,24 @@ class Timeline:
                 else:
                     self.recording_buffer[1] = self.cursor_position
 
+            # Check if cursor is near timeline's range
+            screen_width = pygame.display.get_window_size()[0]
+            visible_start = self.offset_x
+            visible_end = self.offset_x + screen_width
+
+            if self.cursor_position > visible_end - (screen_width * 0.2):
+                self.offset_x += (self.cursor_position - visible_end + (screen_width * 0.2)) * 0.1  # Smooth scroll
+
+            self.offset_x = max(0, self.offset_x)
+
+
     def start_timeline_recording(self, track_index):
         """Starts recording in timeline."""
         self.is_recording = True
         self.is_playing = True
         self.recording_buffer = None
         self.active_track = track_index
-        self.track_starts[track_index] = self.cursor_position  # Başlangıç pozisyonunu ayarla
+        self.track_starts[track_index] = self.cursor_position
 
     def stop_timeline_recording(self):
         """Stops recording in timeline."""
@@ -162,6 +174,16 @@ class Timeline:
         self.is_playing = False
         self.recording_buffer = None
         self.active_track = None
+
+    def reset_timeline(self):
+        """
+        Resets the timeline and cursor to the starting position.
+        """
+        self.cursor_position = 0
+        self.offset_x = 0
+        self.is_playing = False
+        self.is_recording = False
+
 
     def draw_waveform(self, surface, track, x, y, width, height, color):
         """
@@ -202,6 +224,6 @@ class Timeline:
 
         if top_points and bottom_points:
             bottom_points.reverse()
-            pygame.draw.polygon(surface, color, top_points + bottom_points, 0)  # 0 kalınlık ile dolgu yap
+            pygame.draw.polygon(surface, color, top_points + bottom_points, 0)
 
 

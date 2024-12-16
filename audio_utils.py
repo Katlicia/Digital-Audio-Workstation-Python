@@ -213,7 +213,7 @@ class AudioManager:
     def adjust_volume(self, change):
         self.volume_level = max(0.0, min(1.50, self.volume_level + change))
 
-    def load_audio_file(self, file_path):
+    def load_audio_file(self, file_path, track_index):
         """
         Loads an audio file to the next empty track.
         Args:
@@ -234,8 +234,8 @@ class AudioManager:
             samples = np.array(audio.get_array_of_samples(), dtype=np.float16) / 32768.0
 
             # Load to track.
-            self.tracks[self.find_next_empty_track()] = samples
-            self.loaded_from_file[self.find_next_empty_track()] = True
-            print(f"Audio file loaded into track {self.find_next_empty_track()}.")
+            self.tracks[track_index] = samples
+            self.loaded_from_file[track_index] = True
+            print(f"Audio file loaded into track {track_index}.")
         except Exception as e:
             print(f"Error loading audio file: {e}")

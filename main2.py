@@ -22,14 +22,13 @@ editing_track = None
 original_text = ""
 playing_now = False
 
-
 theme = darkTheme
 themestr = "darkTheme"
-rectcolor = theme[3] # Track, passive button color
-linecolor = theme[2] # Line, active button color
-wincolor = theme[4] # Win, timeline color
-temptrackcolor = theme[1] # Temp track, waveform color
 timelinetrackcolor = theme[0] # Timelinetrack color
+temptrackcolor = theme[1] # Temp track, waveform color
+linecolor = theme[2] # Line, active button color
+rectcolor = theme[3] # Track, passive button color
+wincolor = theme[4] # Win, timeline color
 text_color = (255, 255, 255) # Text color
 
 recordButton = ImageButton(record_button_x, menu_button_y_pos, "images/record.png", win)
@@ -135,7 +134,7 @@ def load_track(track_index):
 
 def load_track():
     """
-    Sıradaki boş track'e bir ses dosyasını yükler.
+    Uploads an audio to the next empty track.
     """
     root = tk.Tk()
     root.withdraw()
@@ -235,9 +234,8 @@ while running:
 
             if resetButton.isClicked(pos):
                 audio_manager.stop_playing()
-                timeline.is_playing = False
+                timeline.reset_timeline()
                 playing_now = False
-                timeline.cursor_position = 0
 
             if volumeUpButton.isClicked(pos):
                 audio_manager.adjust_volume(0.1) # Up %10
@@ -246,23 +244,23 @@ while running:
 
             for i, solo in enumerate(TrackSoloButtonList):
                 if solo.isClicked(pos):
-                    # Eğer track mute durumundaysa, mute'yi kapat
+                    # If mute is true then mute is false
                     if audio_manager.muted_tracks[i]:
                         audio_manager.muted_tracks[i] = False
-                        TrackMuteButtonList[i].passive_color = rectcolor  # Mute pasif rengi
+                        TrackMuteButtonList[i].passive_color = rectcolor
 
-                    # Solo durumunu değiştir
+                    # Change solo state
                     audio_manager.solo_tracks[i] = not audio_manager.solo_tracks[i]
                     solo.passive_color = linecolor if audio_manager.solo_tracks[i] else rectcolor
 
             for i, mute in enumerate(TrackMuteButtonList):
                 if mute.isClicked(pos):
-                    # Eğer track solo durumundaysa, solo'yu kapat
+                    # If solo is true then solo is false
                     if audio_manager.solo_tracks[i]:
                         audio_manager.solo_tracks[i] = False
-                        TrackSoloButtonList[i].passive_color = rectcolor  # Solo pasif rengi
+                        TrackSoloButtonList[i].passive_color = rectcolor
 
-                    # Mute durumunu değiştir
+                    # Change mute state
                     audio_manager.muted_tracks[i] = not audio_manager.muted_tracks[i]
                     mute.passive_color = linecolor if audio_manager.muted_tracks[i] else rectcolor
 
@@ -300,9 +298,8 @@ while running:
                         audio_manager.play_all_tracks()
                 
                 if event.key == pygame.K_r:
-                    timeline.cursor_position = 0
-                    timeline.is_playing = False
                     audio_manager.stop_playing()
+                    timeline.reset_timeline()
                     playing_now = False
 
     wincolor = theme[4]
@@ -343,7 +340,7 @@ while running:
         volumeDownButton.setImage(f"images/{themestr}/sounddownactive.png")
     else:
         volumeDownButton.setImage(f"images/{themestr}/sounddownpassive.png")
-    # Volume seviyesi yazısını göstermek
+
     volume_text = font.render(f"Volume: {int(audio_manager.volume_level * 100)}", True, text_color)
     volume_text_rect = volume_text.get_rect(topleft=(volume_up_button_x + 60, menu_button_y_pos-gui_line_border))
     win.blit(volume_text, volume_text_rect)
@@ -360,14 +357,14 @@ while running:
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)
     pygame.draw.rect(win, linecolor, timelineFrameRect, gui_line_border + 1)
     timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, audio_manager.tracks, audio_manager.sample_rate, rectcolor, linecolor, temptrackcolor, timelinetrackcolor, temptrackcolor, audio_manager)
-
-    trackFrameLine = pygame.draw.line(win, linecolor, (0.5, 69), (300, 69))
+    
+    trackFrameLine = pygame.draw.line(win, linecolor, (0.5, 69), (timeline_x, 69))
     text = font.render("Tracks", True, text_color)
     text_rect = text.get_rect(center=(85, 55))
     win.blit(text, text_rect)
 
     for i in range(1, 10):
-        pygame.draw.line(win, linecolor, (0.5, 69 + 57 * i), (170, 69 + 57 * i))
+        pygame.draw.line(win, linecolor, (0.5, 69 + 57 * i), (timeline_x, 69 + 57 * i))
 
     for i, trackRect in enumerate(TrackRectList):
         trackRect.passive_color = rectcolor
@@ -380,6 +377,8 @@ while running:
         else:
             trackRect.drawLeft()           
     
+    pygame.draw.line(win, linecolor, (timeline_x-1,  timeline_y), (timeline_x-1, timeline_y+timeline_height))
+
     for i, muteButton in enumerate(TrackMuteButtonList):
         muteButton.passive_color = rectcolor if not audio_manager.muted_tracks[TrackMuteButtonList.index(muteButton)] else linecolor
         muteButton.active_color = linecolor
@@ -407,7 +406,7 @@ while running:
     update_menu_colors()
     pygame.display.update()
     
-    clock.tick(144)
-    # print(clock.get_fps())
+    clock.tick()
+    print(clock.get_fps())
 
 pygame.quit()
