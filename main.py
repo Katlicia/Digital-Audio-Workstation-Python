@@ -358,6 +358,7 @@ while running:
                             theme = sakuraTheme
                             themestr = "sakuraTheme"
                         save_theme_to_file(themestr)
+                        timeline.reset_waveform_cache()
                 theme_menu_open = False
 
             elif save_menu_open:
@@ -593,7 +594,7 @@ while running:
     
     timelineFrameRect = pygame.Rect(0.5, 40, x, 599)
     pygame.draw.rect(win, linecolor, timelineFrameRect, gui_line_border + 1)
-    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, audio_manager.tracks, audio_manager.sample_rate, rectcolor, linecolor, temptrackcolor, timelinetrackcolor, temptrackcolor, audio_manager)
+    timeline.drawTimeline(win, timeline_x, timeline_y, x, timeline_height, audio_manager.tracks, audio_manager.sample_rate, rectcolor, linecolor, temptrackcolor, timelinetrackcolor, temptrackcolor, theme)
     
     trackFrameLine = pygame.draw.line(win, linecolor, (0.5, 69), (timeline_x, 69))
     text = font.render("Tracks", True, text_color)

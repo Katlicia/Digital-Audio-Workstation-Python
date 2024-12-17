@@ -72,10 +72,11 @@ class Timeline:
                         if audio_manager.tracks[track_index] is not None:
                             audio_manager.delete_track(track_index)
 
-    def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, wincolor, linecolor, temptrackcolor, trackcolor, wavecolor, audio_manager):
+    def drawTimeline(self, win, x, y, width, height, tracks, sample_rate, wincolor, linecolor, temptrackcolor, trackcolor, wavecolor, theme):
         """
         Draws timeline and corresponding tracks.
         """
+        wavecolor = theme[1]
         total_length_px = self.dynamic_length * self.unit_width
         self.autoExtendTimeline(win)
         
