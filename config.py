@@ -1,5 +1,5 @@
 SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_HEIGHT = 1024
 
 menu_button_start_pos_x = 5
 menu_button_y_pos = 7.5
@@ -34,3 +34,11 @@ strawberryTheme = ((186, 39, 54), (218, 61, 76), (222, 62, 93), (236, 86, 127), 
 greenteaTheme = ((46, 133, 23), (75, 148, 56), (113, 162, 91), (130, 179, 108), (147, 196, 125))
 mochiTheme = ((71, 26, 26), (67, 159, 119), (27, 87, 14), (45, 114, 29), (45, 144, 29))
 sakuraTheme = ((112, 64, 65), (173, 242, 241), 	(239, 151, 152), (245, 195, 196), (232, 172, 172))
+
+
+button_width = 120
+button_height = 35
+button_gap_x = 100
+button_gap_y = 100
+shadow_offset = 5
+shadow_color = (50, 50, 50)

@@ -111,21 +111,13 @@ TrackSoloButtonList = [
 
 
 effectButtonList = [
-    {"button": Button(700, 680, 120, 30, win, linecolor, rectcolor, text_color, "Reverb", 15), "effect": "apply_reverb", "params": {"intensity": 0.8, "max_length": 2.0}},
+    {"button": Button(300, 680, 120, 30, win, linecolor, rectcolor, text_color, "Reverb", 15), "effect": "apply_reverb", "params": {"intensity": 0.8, "max_length": 2.0}},
     {"button": Button(700, 720, 120, 30, win, linecolor, rectcolor, text_color, "Delay", 15), "effect": "apply_delay", "params": {"delay_time": 0.3, "feedback": 0.5}},
     {"button": Button(700, 760, 120, 30, win, linecolor, rectcolor, text_color, "Pitch Shift", 15), "effect": "apply_pitch_shift", "params": {"semitones": 3}},
     {"button": Button(700, 800, 120, 30, win, linecolor, rectcolor, text_color, "Distortion", 15), "effect": "apply_distortion", "params": {"intensity": 5.0}},
     {"button": Button(700, 840, 120, 30, win, linecolor, rectcolor, text_color, "Gain", 15), "effect": "apply_volume", "params": {"gain": 2.0}},
     {"button": Button(700, 880, 120, 30, win, linecolor, rectcolor, text_color, "Equalizer", 15), "effect": "apply_equalizer", "params": {"low_gain": 1.2, "mid_gain": 1.0, "high_gain": 1.5}}
 ]
-
-
-# Gain (gain 0.0 - 5.0)
-# EQ (low_gain = 1.0, mid_gan = 1.0, high_gain = 1.0) 0.0 - 2.0 1 Değiştirmez
-# Reverb (intensity = 0.0 - 1.0, max_length = 2.0 saniye)
-# Delay (delay_time = 0.1 - 1.0 saniye, feedback = 0.0 - 1.0 tam yankı)
-# Pitch shift (semitones= 0 değişmez) - 12 bir oktav düşür + 12 bir oktav yükselt
-# Distortion (intensity = 0.5 - 5.0, )
 
 timeline = Timeline()
 audio_manager = AudioManager()
@@ -156,11 +148,10 @@ def load_track():
 
 def show_effect_params(effect_name, default_params):
     """
-    Kullanıcıdan efekt parametrelerini alır ve verilen değer aralıklarına göre kontrol eder.
+    It receives effect parameters from the user and checks them according to the given value ranges.
     """
-    params = default_params.copy()  # Varsayılan değerleri kopyala
+    params = default_params.copy()
 
-    # Parametre sınırlarını tanımla
     effect_limits = {
         "apply_reverb": {"Intensity": (0.0, 2.0), "Max Length": (0.1, 5.0)},
         "apply_delay": {"Delay Time": (0.1, 2.0), "Feedback": (0.0, 1.0)},
@@ -177,9 +168,9 @@ def show_effect_params(effect_name, default_params):
 
         for key, entry in entry_fields.items():
             try:
-                value = float(entry.get())  # Değeri float'a dönüştür
+                value = float(entry.get())
                 min_val, max_val = effect_limits[effect_name][key]
-                if not (min_val <= value <= max_val):  # Sınır kontrolü
+                if not (min_val <= value <= max_val):
                     valid_input = False
                     warning_message += f"{key}: {min_val} - {max_val}\n"
                 else:
@@ -189,7 +180,7 @@ def show_effect_params(effect_name, default_params):
                 warning_message += f"{key}: Geçerli bir sayı girin!\n"
 
         if valid_input:
-            root.destroy()  # Tüm girişler geçerliyse pencereyi kapat
+            root.destroy()
         else:
             warning_label.config(text="Hatalı giriş!\n" + warning_message)
 
@@ -198,7 +189,7 @@ def show_effect_params(effect_name, default_params):
         params = None
         root.destroy()
 
-    # Tkinter popup penceresi
+    # Tkinter popup
     root = tk.Tk()
     root.title(f"Edit {effect_name} Parameters")
     root.geometry("350x300")
@@ -208,11 +199,11 @@ def show_effect_params(effect_name, default_params):
     warning_label = tk.Label(root, text="", fg="red")
     warning_label.grid(row=len(default_params) + 1, column=0, columnspan=2, pady=5)
 
-    # Parametre isimlerini dönüştürme: snake_case → Pascal Case
+    # snake_case → Pascal Case
     def snake_to_pascal(name):
         return " ".join(word.capitalize() for word in name.split("_"))
 
-    # Parametreleri göster
+    # Show args
     for idx, (param, value) in enumerate(default_params.items()):
         display_name = snake_to_pascal(param)
         tk.Label(root, text=f"{display_name}:").grid(row=idx, column=0, padx=10, pady=5)
@@ -221,17 +212,16 @@ def show_effect_params(effect_name, default_params):
         entry.grid(row=idx, column=1, padx=10, pady=5)
         entry_fields[display_name] = entry
 
-    # Save ve Cancel butonları
+    # Save and cancel
     tk.Button(root, text="Save", command=save).grid(row=len(default_params) + 2, column=0, pady=10)
     tk.Button(root, text="Cancel", command=cancel).grid(row=len(default_params) + 2, column=1, pady=10)
 
     root.mainloop()
 
-    # Cancel butonuna basılmışsa direkt None döndür
     if params is None:
         return None
 
-    # Parametre isimlerini orijinal snake_case'e geri döndür
+    # Return args to snake_case
     final_params = {}
     for snake_name in default_params.keys():
         pascal_name = snake_to_pascal(snake_name)
@@ -391,28 +381,24 @@ while running:
                     timeline.reset_timeline()
                     playing_now = False
 
-        # Sürükleme başlatma
         if event.type == pygame.MOUSEBUTTONDOWN:
             for effect in effectButtonList:
                 if effect["button"].isClicked(pos):
-                    dragging_effect = effect  # Sürüklenen efektin tüm bilgisini al
+                    dragging_effect = effect
                     dragging_pos = pos
 
-        # Sürükleme sırasında pozisyonu güncelle
         if event.type == pygame.MOUSEMOTION and dragging_effect:
             dragging_pos = pos
 
         if event.type == pygame.MOUSEBUTTONUP and dragging_effect:
-            # Mouse'un bırakıldığı konumu al
             for track_idx, trackRect in enumerate(TrackRectList):
-                if trackRect.rect.collidepoint(pos):  # Bırakılan yer track üzerinde mi?
+                if trackRect.rect.collidepoint(pos):
                     effect_name = dragging_effect["effect"]
                     default_params = dragging_effect["params"]
 
-                    # Popup aç ve kullanıcıdan parametreleri al
                     user_params = show_effect_params(effect_name, default_params)
                     
-                    if user_params:  # Eğer parametre girişi varsa
+                    if user_params:
                         if audio_manager.tracks[track_idx] is not None:
                             effect_function = getattr(audio_manager, effect_name)
                             audio_manager.tracks[track_idx] = effect_function(
@@ -527,15 +513,43 @@ while running:
     text_rect = text.get_rect(center=(fx_rect.center))
     win.blit(text, text_rect)
 
-    for i in effectButtonList:
-        i["button"].x = fx_rect.x + 20
-        i["button"].draw()
+    total_width = 3 * button_width + 2 * button_gap_x
+    total_height = 2 * button_height + button_gap_y
 
-    # Sürüklenen butonun görselini ekrana çiz
+    start_x = fx_rect.centerx - total_width // 2
+    start_y = fx_rect.centery - total_height // 2
+
+    effect_title_font = pygame.font.SysFont("Arial", 28, bold=True)
+    effect_title = effect_title_font.render("Effects", True, linecolor)
+    win.blit(effect_title, (fx_rect.x + 20, fx_rect.y + 5))  # Sol üst başlık
+    pygame.draw.line(win, linecolor, (fx_rect.x + 20, fx_rect.y + 35),
+                    (fx_rect.x + fx_rect.width - 20, fx_rect.y + 35), 2)
+
+    for idx, effect in enumerate(effectButtonList):
+        col = idx % 3
+        row = idx // 3
+
+        x = start_x + col * (button_width + button_gap_x)
+        y = start_y + row * (button_height + button_gap_y)
+
+        shadow_rect = pygame.Rect(x + shadow_offset, y + shadow_offset, button_width, button_height)
+        pygame.draw.rect(win, linecolor, shadow_rect, border_radius=10)
+
+        effect["button"].rect.x = x
+        effect["button"].rect.y = y
+
+        if effect["button"].isClicked(pos):
+            pygame.draw.rect(win, linecolor, effect["button"].rect, border_radius=10)
+        else:
+            pygame.draw.rect(win, rectcolor, effect["button"].rect, border_radius=10)
+
+        text_surface = font.render(effect["button"].text, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=effect["button"].rect.center)
+        win.blit(text_surface, text_rect)
+
     if dragging_effect:
         effect_surface = font.render(dragging_effect["button"].text, True, (255, 255, 255))
         win.blit(effect_surface, (dragging_pos[0] - 20, dragging_pos[1] - 10))
-
 
     update_menu_colors()
     pygame.display.update()
