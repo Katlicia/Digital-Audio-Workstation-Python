@@ -88,9 +88,10 @@ volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images
 
 file_menu_open = False
 file_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Load Project", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 4, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
 
 ]
 
@@ -107,6 +108,11 @@ theme_menu_buttons = [
 save_menu_open = False
 save_menu_buttons = [
     Button(menu_button_start_pos_x+gui_line_border+menu_button_width*2, menu_button_y_pos + menu_button_height, 83, menu_button_height, win, rectcolor, linecolor, text_color, "Save Project", font_size=15)
+]
+
+edit_menu_open = False
+edit_menu_buttons = [
+     Button(menu_button_start_pos_x+gui_line_border+menu_button_width, menu_button_y_pos + menu_button_height, 50, menu_button_height, win, rectcolor, linecolor, text_color, "Undo", font_size=15)
 ]
 
 MenuButtonList = [
@@ -178,17 +184,18 @@ def update_menu_colors():
     for file_button in file_menu_buttons:
         file_button.passive_color = rectcolor
         file_button.active_color = linecolor
-        file_button.text_color = text_color
     
     for theme_button in theme_menu_buttons:
         theme_button.passive_color = rectcolor
         theme_button.active_color = linecolor
-        theme_button.text_color = text_color
     
     for save_button in save_menu_buttons:
         save_button.passive_color = rectcolor
         save_button.active_color = linecolor
-        save_button.text_color = text_color
+    
+    for edit_button in edit_menu_buttons:
+        edit_button.passive_color = rectcolor
+        edit_button.active_color = linecolor
 
 def load_track():
     """
@@ -288,10 +295,6 @@ def pascal_to_snake(name):
     """PascalCase to snake_case."""
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).replace(" ", "").lower()
 
-
-saveButton = Button(400, 10, 120, 25, win, rectcolor, linecolor, text_color, "Save Project", 15)
-loadButton = Button(530, 10, 120, 25, win, rectcolor, linecolor, text_color, "Load Project", 15)
-
 def ask_to_save_before_exit():
     root = tk.Tk()
     root.withdraw()
@@ -317,6 +320,8 @@ while running:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            if audio_manager.is_project_empty():
+                running = False
             if not audio_manager.is_dirty:
                 running = False
             else:
@@ -332,15 +337,6 @@ while running:
         timeline.handleClick(event, timeline_x, timeline_y, x, timeline_height, audio_manager)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-
-            if saveButton.isClicked(pos):
-                audio_manager.save_project(TrackRectList)
-
-            if loadButton.isClicked(pos):
-                audio_manager.load_project(TrackRectList)
-                timeline.reset_timeline()
-
-
             if theme_menu_open:
                 for theme_button in theme_menu_buttons:
                     if theme_button.isClicked(pos):
@@ -370,6 +366,12 @@ while running:
                     if save_button.isClicked(pos):
                         audio_manager.save_project(TrackRectList)
                 save_menu_open = False
+            
+            elif edit_menu_open:
+                for edit_button in edit_menu_buttons:
+                    if edit_button.isClicked(pos):
+                        audio_manager.undo()
+                edit_menu_open = False
 
             elif file_menu_open:
                 for file_button in file_menu_buttons:
@@ -378,6 +380,8 @@ while running:
                             audio_manager.export_tracks_to_file()
                         elif file_button.text == "Import as WAV/MP3":
                             load_track()
+                        elif file_button.text == "Load Project":
+                            audio_manager.load_project(TrackRectList)
 
                 file_menu_open = False
 
@@ -387,6 +391,8 @@ while running:
                 theme_menu_open = not theme_menu_open
             elif MenuButtonList[-2].isClicked(pos):
                 save_menu_open = not save_menu_open
+            elif MenuButtonList[1].isClicked(pos):
+                edit_menu_open = not edit_menu_open
 
             if recordButton.isClicked(pos) and audio_manager.find_next_empty_track() != None:
                 if audio_manager.recording:
@@ -652,6 +658,10 @@ while running:
         for save_button in save_menu_buttons:
             save_button.drawLeft()
     
+    if edit_menu_open:
+        for edit_button in edit_menu_buttons:
+            edit_button.drawLeft()
+    
     fx_frame_rect = pygame.Rect(x / 2 - 400 - gui_line_border, timeline_y + timeline_height + 25 - gui_line_border, 800 + gui_line_border, 300 + gui_line_border)
     pygame.draw.rect(win, linecolor, fx_frame_rect)
 
@@ -700,9 +710,6 @@ while running:
     if dragging_effect:
         effect_surface = font.render(dragging_effect["button"].text, True, text_color)
         win.blit(effect_surface, (dragging_pos[0] - 20, dragging_pos[1] - 10))
-
-    saveButton.draw()
-    loadButton.draw()
 
     if audio_manager.save_feedback:
         message, timestamp = audio_manager.save_feedback

@@ -219,7 +219,7 @@ class AudioManager:
         print(f"Tracks exported to {file_path}")
 
     def adjust_volume(self, change):
-        self.volume_level = max(0.0, min(1.50, self.volume_level + change))
+        self.volume_level = round(max(0.0, min(1.50, self.volume_level + change)), 2)
         self.mark_dirty()
 
     def load_audio_file(self, file_path, track_index):
@@ -419,3 +419,8 @@ class AudioManager:
         else:
             print("Undo stack is empty. Nothing to undo.")
 
+    def is_project_empty(self):
+        """
+        Checks if the project has no tracks or data.
+        """
+        return all(track is None for track in self.tracks)
