@@ -23,6 +23,7 @@ class AudioManager:
         self.muted_tracks = [False] * max_tracks
         self.solo_tracks = [False] * max_tracks
         self.loaded_from_file = [False] * max_tracks
+        self.track_fx = [[] for _ in range(10)]
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -313,8 +314,6 @@ class AudioManager:
         output = np.clip(output, -1.0, 1.0)
 
         return output
-
-
 
     # Delay Effect
     def apply_delay(self, track, delay_time=0.3, feedback=0.5):

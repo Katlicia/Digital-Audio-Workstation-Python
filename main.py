@@ -15,6 +15,7 @@ clock = pygame.time.Clock()
 running = True
 
 font = pygame.font.SysFont("Arial", 24)
+fxfont = pygame.font.SysFont("Arial", 12)
 
 track_spacing = 10
 track_start_y = 50
@@ -323,6 +324,16 @@ while running:
             if volumeDownButton.isClicked(pos):
                 audio_manager.adjust_volume(-0.1)  # Down %10
 
+            for i, button in enumerate(TrackRectList):
+                text_surface = button.font.render(button.text, True, text_color)
+                text_rect = text_surface.get_rect(topleft=button.rect.topleft)
+
+                if text_rect.collidepoint(pos): 
+                    editing_track = i
+                    original_text = button.text
+                    break
+
+
             for i, solo in enumerate(TrackSoloButtonList):
                 if solo.isClicked(pos):
                     # If mute is true for this track, turn it off
@@ -404,6 +415,7 @@ while running:
                             audio_manager.tracks[track_idx] = effect_function(
                                 audio_manager.tracks[track_idx], **user_params
                             )
+                            audio_manager.track_fx[track_idx].append(effect_name.replace("apply_", "").capitalize())
             dragging_effect = None
 
     wincolor = theme[4]
@@ -477,7 +489,25 @@ while running:
             text_surface = font.render(trackRect.text, True, text_color)
             win.blit(text_surface, (trackRect.rect.x + 5, trackRect.rect.y + (trackRect.rect.height - text_surface.get_height()) // 2))
         else:
-            trackRect.drawLeft()           
+            trackRect.drawLeft()
+            fx_list = audio_manager.track_fx[i]
+            if fx_list:
+                start_x = trackRect.rect.x + 5
+                start_y = trackRect.rect.y + 20
+
+                for fx_idx, fx in enumerate(fx_list):
+                    fx_text = fx[:2]
+                    fx_surface = fxfont.render(fx_text, True, text_color)
+                    fx_rect = fx_surface.get_rect(topleft=(start_x, start_y))
+
+                    win.blit(fx_surface, fx_rect)
+                    if event.type == pygame.MOUSEBUTTONDOWN and fx_rect.collidepoint(pos):
+                        del audio_manager.track_fx[i][fx_idx]
+                        break
+
+                    start_x += fx_rect.width + 10
+                
+
     
     pygame.draw.line(win, linecolor, (timeline_x-1,  timeline_y), (timeline_x-1, timeline_y+timeline_height))
 
