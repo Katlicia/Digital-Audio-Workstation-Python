@@ -109,13 +109,14 @@ TrackSoloButtonList = [
 
 
 effectButtonList = [
-    Button(700, 680, 120, 30, win, linecolor, linecolor, text_color, "Reverb", 15),
-    Button(700, 720, 120, 30, win, linecolor, linecolor, text_color, "Delay", 15),
-    Button(700, 760, 120, 30, win, linecolor, linecolor, text_color, "Pitch Shift", 15),
-    Button(700, 800, 120, 30, win, linecolor, linecolor, text_color, "Distortion", 15),
-    Button(700, 840, 120, 30, win, linecolor, linecolor, text_color, "Gain", 15),
-    Button(700, 880, 120, 30, win, linecolor, linecolor, text_color, "Equalizer", 15),
+    {"button": Button(700, 680, 120, 30, win, linecolor, rectcolor, text_color, "Reverb", 15), "effect": "apply_reverb", "params": {"intensity": 0.8}},
+    {"button": Button(700, 720, 120, 30, win, linecolor, rectcolor, text_color, "Delay", 15), "effect": "apply_delay", "params": {"delay_time": 0.3, "feedback": 0.5}},
+    {"button": Button(700, 760, 120, 30, win, linecolor, rectcolor, text_color, "Pitch Shift", 15), "effect": "apply_pitch_shift", "params": {"semitones": 3}},
+    {"button": Button(700, 800, 120, 30, win, linecolor, rectcolor, text_color, "Distortion", 15), "effect": "apply_distortion", "params": {"intensity": 5.0}},
+    {"button": Button(700, 840, 120, 30, win, linecolor, rectcolor, text_color, "Gain", 15), "effect": "apply_volume", "params": {"gain": 2.0}},
+    {"button": Button(700, 880, 120, 30, win, linecolor, rectcolor, text_color, "Equalizer", 15), "effect": "apply_equalizer", "params": {"low_gain": 1.2, "mid_gain": 1.0, "high_gain": 1.5}}
 ]
+
 
 # Gain (gain 0.0 - 2.0)
 # EQ (low_gain = 1.0, mid_gan = 1.0, high_gain = 1.0) 0.0 - 2.0 1 Değiştirmez
@@ -151,6 +152,8 @@ def load_track():
         if next_empty_track is not None:
             audio_manager.load_audio_file(file_path, next_empty_track)
 
+dragging_effect = None  # Hangi buton sürükleniyor?
+dragging_pos = (0, 0)   # Sürüklenen butonun pozisyonu
 
 while running:
     x, y = win.get_size()
@@ -303,6 +306,32 @@ while running:
                     timeline.reset_timeline()
                     playing_now = False
 
+        # Sürükleme başlatma
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for effect in effectButtonList:
+                if effect["button"].isClicked(pos):
+                    dragging_effect = effect  # Sürüklenen efektin tüm bilgisini al
+                    dragging_pos = pos
+
+        # Sürükleme sırasında pozisyonu güncelle
+        if event.type == pygame.MOUSEMOTION and dragging_effect:
+            dragging_pos = pos
+
+        # Sürükleme bırakıldığında track'e efekti uygula
+        if event.type == pygame.MOUSEBUTTONUP and dragging_effect:
+            for track_idx, trackRect in enumerate(TrackRectList):
+                if trackRect.rect.collidepoint(pos):  # Hangi track'e bırakıldığını kontrol et
+                    effect_name = dragging_effect["effect"]
+                    effect_params = dragging_effect["params"]
+
+                    if audio_manager.tracks[track_idx] is not None:
+                        # Dinamik olarak efekt fonksiyonunu çağır
+                        effect_function = getattr(audio_manager, effect_name)
+                        audio_manager.tracks[track_idx] = effect_function(audio_manager.tracks[track_idx], **effect_params)
+                        print(f"{effect_name} efekti Track {track_idx + 1}'e uygulandı!")
+
+            dragging_effect = None  # Sürükleme işlemini sıfırla
+
     wincolor = theme[4]
     win.fill(wincolor)
 
@@ -411,8 +440,14 @@ while running:
     win.blit(text, text_rect)
 
     for i in effectButtonList:
-        i.rect.x = fx_rect.x + 20
-        i.draw()
+        i["button"].x = fx_rect.x + 20
+        i["button"].draw()
+
+    # Sürüklenen butonun görselini ekrana çiz
+    if dragging_effect:
+        effect_surface = font.render(dragging_effect["button"].text, True, (255, 255, 255))
+        win.blit(effect_surface, (dragging_pos[0] - 20, dragging_pos[1] - 10))
+
 
     update_menu_colors()
     pygame.display.update()

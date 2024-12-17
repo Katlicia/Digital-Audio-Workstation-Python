@@ -19,7 +19,6 @@ class AudioManager:
         self.current_audio = []
         self.current_track = None
         self.stream = None
-        self.selected_track = None
         self.timeline = None
         self.muted_tracks = [False] * max_tracks
         self.solo_tracks = [False] * max_tracks
@@ -106,28 +105,31 @@ class AudioManager:
 
             # Solo control
             solo_active = any(self.solo_tracks)
-            
+
             for i, track in enumerate(self.tracks):
                 if track is not None:
                     if solo_active and not self.solo_tracks[i]:
-                        continue  # If solo exists play only the solo audio.
+                        continue  # If solo exists, play only the solo audio
                     if not solo_active and self.muted_tracks[i]:
-                        continue  # If solo doesn't exist pass mute tracks.
-                    
-                    if len(track.shape) > 1:
-                        track = np.mean(track, axis=1)
+                        continue  # If solo doesn't exist, skip muted tracks
+
+                    # Tek boyutlu hale getir
+                    track = np.squeeze(track)
 
                     track_start_in_samples = int(self.timeline.track_starts[i] / self.timeline.unit_width * self.sample_rate)
+                    start_in_track = max(0, cursor_sample_position - track_start_in_samples)
+                    start_in_mixed = max(0, track_start_in_samples - cursor_sample_position)
 
-                    if track_start_in_samples + len(track) > cursor_sample_position:
-                        start_in_track = max(0, cursor_sample_position - track_start_in_samples)
-                        track_end = len(track)
-                        if start_in_track < track_end:
-                            start_in_mixed = max(0, track_start_in_samples - cursor_sample_position)
-                            mixed_audio[start_in_mixed:start_in_mixed + (track_end - start_in_track)] += track[start_in_track:]
+                    # Minimum uzunlukta ekleme yap
+                    remaining_track_length = len(track[start_in_track:])
+                    remaining_mixed_length = len(mixed_audio[start_in_mixed:])
+                    length_to_add = min(remaining_track_length, remaining_mixed_length)
 
-            if np.max(np.abs(mixed_audio)) > 0:
-                mixed_audio /= np.max(np.abs(mixed_audio))
+                    if length_to_add > 0:
+                        mixed_audio[start_in_mixed:start_in_mixed + length_to_add] += track[start_in_track:start_in_track + length_to_add]
+
+            # if np.max(np.abs(mixed_audio)) > 0:
+            #     mixed_audio /= np.max(np.abs(mixed_audio))  # Normalize et
 
             self.playing_audio = mixed_audio[cursor_sample_position:]
             self.current_audio_position = 0
@@ -136,7 +138,6 @@ class AudioManager:
                 self.stream.close()
             self.stream = sd.OutputStream(callback=self.audio_playback_callback, samplerate=self.sample_rate, channels=1)
             self.stream.start()
-
 
     def export_tracks_to_file(self):
         if not any(track is not None for track in self.tracks):
@@ -254,48 +255,88 @@ class AudioManager:
         else:
             print("Invalid track.")
 
-    # Volume (Gain) Effect
     def apply_volume(self, track, gain=1.0):
-        return track * gain
+        """
+        Track'e gain (ses seviyesi) uygular.
+        """
+        # Tek boyutlu hale getir ve float32 formatına zorla
+        track = np.squeeze(track).astype(np.float32)
+
+        # Gain uygula
+        track_with_gain = track * gain
+
+        # Aşırı yüklemeyi (clipping) engellemek için normalize et
+        track_with_gain = np.clip(track_with_gain, -1.0, 1.0)
+
+        return track_with_gain
 
     # Equalizer (Low, Mid, High Frequencies)
-    def apply_equalizer(self, track, sample_rate, low_gain=1.0, mid_gain=1.0, high_gain=1.0):
+    def apply_equalizer(self, track, low_gain=1.0, mid_gain=1.0, high_gain=1.0):
         from scipy.signal import butter, sosfilt
 
-        def bandpass_filter(data, lowcut, highcut, sample_rate):
-            sos = butter(10, [lowcut / (0.5 * sample_rate), highcut / (0.5 * sample_rate)], btype='band', output='sos')
+        def bandpass_filter(data, lowcut, highcut):
+            sos = butter(10, [lowcut / (0.5 * self.sample_rate), highcut / (0.5 * self.sample_rate)], btype='band', output='sos')
             return sosfilt(sos, data)
 
-        low = bandpass_filter(track, 20, 300, sample_rate) * low_gain
-        mid = bandpass_filter(track, 300, 3000, sample_rate) * mid_gain
-        high = bandpass_filter(track, 3000, 20000, sample_rate) * high_gain
+        track = np.squeeze(track)  # Tek boyutlu hale getir
+        low = bandpass_filter(track, 20, 300) * low_gain
+        mid = bandpass_filter(track, 300, 3000) * mid_gain
+        high = bandpass_filter(track, 3000, 20000) * high_gain
 
         return low + mid + high
 
     # Reverb Effect
-    def apply_reverb(self, track, intensity=0.3, sample_rate=44100, max_length=2.0):
-        track = track / np.max(np.abs(track))
-        max_decay_samples = int(sample_rate * max_length)
-        decay = np.linspace(1, 0, int(len(track) * intensity))[:max_decay_samples]
-        decay /= np.sum(decay)
+    def apply_reverb(self, track, intensity=0.3, max_length=2.0):
+        """
+        Reverb efekti uygular ve toplam ses seviyesini dengeler.
+        intensity: Reverb yankısının sesi ne kadar etkileyeceği (0.0 - 1.0 arası).
+        max_length: Maksimum yankı süresi (saniye).
+        """
+        track = np.squeeze(track).astype(np.float32)  # Tek boyutlu hale getir
+
+        # Track'i normalize etmeden maksimum değeri kontrol et
+        track_max = np.max(np.abs(track)) if np.max(np.abs(track)) > 0 else 1.0
+        track = track / track_max  # Clipping olmaması için normalize
+
+        # Reverb için decay (yankı azaltımı) oluştur
+        max_decay_samples = int(self.sample_rate * max_length)
+        decay = np.linspace(1, 0, max_decay_samples, dtype=np.float32)
+        decay /= np.sum(decay)  # Enerji korunumu için normalize
+
+        # Reverb efektini hesapla
         reverberated = fftconvolve(track, decay, mode="full")[:len(track)]
-        reverberated /= np.max(np.abs(reverberated))
-        return reverberated
+
+        # Orijinal ses ile reverberated sesi karıştır
+        output = (1 - intensity) * track + (intensity * reverberated)
+
+        # Toplam ses seviyesini clipping'den koru
+        output = np.clip(output, -1.0, 1.0)
+
+        return output
+
+
 
     # Delay Effect
-    def apply_delay(self, track, sample_rate, delay_time=0.3, feedback=0.5):
-        delay_samples = int(delay_time * sample_rate)
-        delayed_track = np.zeros(len(track) + delay_samples)
+    def apply_delay(self, track, delay_time=0.3, feedback=0.5):
+        track = np.squeeze(track)  # Tek boyutlu hale getir
+        delay_samples = int(delay_time * self.sample_rate)
+
+        delayed_track = np.zeros(len(track) + delay_samples, dtype=np.float32)
         delayed_track[:len(track)] += track
         delayed_track[delay_samples:] += track * feedback
         return delayed_track[:len(track)]
 
     # Pitch
-    def apply_pitch_shift(self, track, sample_rate, semitones=0):
-        n_fft = min(2048, len(track))  # Track uzunluğu kısa ise n_fft'yi küçült
-        return librosa.effects.pitch_shift(track, sr=sample_rate, n_steps=semitones, n_fft=n_fft)
+    def apply_pitch_shift(self, track, semitones=0):
+        track = np.squeeze(track)  # Tek boyutlu hale getir
+        if len(track) < 2048:
+            n_fft = len(track)  # Track uzunluğundan büyük olmayan bir n_fft kullan
+        else:
+            n_fft = 2048
+
+        return librosa.effects.pitch_shift(track, sr=self.sample_rate, n_steps=semitones, n_fft=n_fft)
 
     # Distortion Effect
-    def apply_distortion(self, track, intensity=1.0):
+    def apply_distortion(self, track, intensity=2.0):
         return np.tanh(track * intensity)
 
