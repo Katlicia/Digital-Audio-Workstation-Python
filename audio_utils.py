@@ -149,6 +149,13 @@ class AudioManager:
             self.stream.start()
 
     def export_tracks_to_file(self):
+
+        if all(track is None for track in self.tracks):
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showwarning("Export Warning", "There are no tracks to export!")
+            return
+
         if not any(track is not None for track in self.tracks):
             return
 

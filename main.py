@@ -89,9 +89,8 @@ volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images
 file_menu_open = False
 file_menu_buttons = [
     Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Load Project", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as MP3", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 4, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV/MP3", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
 
 ]
 
@@ -376,7 +375,7 @@ while running:
             elif file_menu_open:
                 for file_button in file_menu_buttons:
                     if file_button.isClicked(pos):
-                        if file_button.text == "Export as WAV" or file_button.text == "Export as MP3":
+                        if file_button.text == "Export as WAV/MP3":
                             audio_manager.export_tracks_to_file()
                         elif file_button.text == "Import as WAV/MP3":
                             load_track()
@@ -478,7 +477,7 @@ while running:
                         TrackRectList[editing_track].text = TrackRectList[editing_track].text[:-1]
                 elif event.key == pygame.K_RETURN and len(TrackRectList[editing_track].text) > 0:
                     editing_track = None
-                    audio_manager.is_dirty()
+                    audio_manager.mark_dirty()
                 elif event.key == pygame.K_ESCAPE:
                     TrackRectList[editing_track].text = original_text
                     editing_track = None
