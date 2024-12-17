@@ -79,6 +79,7 @@ class AudioManager:
                 audio_data = np.concatenate(self.current_audio, axis=0)
                 self.tracks[self.current_track] = audio_data
                 self.mark_dirty()
+                self.timeline.reset_waveform_cache(self.current_track)
             else:
                 print("Warning: No audio data recorded.")
             self.current_audio = []
@@ -248,11 +249,13 @@ class AudioManager:
             #Convert pydub data to numpy array.
             audio = audio.set_frame_rate(self.sample_rate).set_channels(1)
             samples = np.array(audio.get_array_of_samples(), dtype=np.float16) / 32768.0
+            self.save_state()
 
             # Load to track.
             self.tracks[track_index] = samples
             self.loaded_from_file[track_index] = True
             self.mark_dirty()
+            self.timeline.reset_waveform_cache(track_index)
         except Exception as e:
             print(f"Error loading audio file: {e}")
 
@@ -267,6 +270,7 @@ class AudioManager:
             self.solo_tracks[track_index] = False
             self.mark_dirty()
             self.save_state()
+            self.timeline.reset_waveform_cache(track_index)
         else:
             print("Invalid track.")
 
@@ -276,6 +280,7 @@ class AudioManager:
         track_with_gain = np.clip(track_with_gain, -1.0, 1.0)
         self.mark_dirty()
         self.save_state()
+        self.timeline.reset_waveform_cache(self.current_track)
         return track_with_gain
 
     # Equalizer (Low, Mid, High Frequencies)
@@ -290,6 +295,7 @@ class AudioManager:
         high = bandpass_filter(track, 3000, 20000) * high_gain
         self.mark_dirty()
         self.save_state()
+        self.timeline.reset_waveform_cache(self.current_track)
         return low + mid + high
 
     # Reverb Effect
@@ -305,6 +311,7 @@ class AudioManager:
         output = np.clip(output, -1.0, 1.0)
         self.mark_dirty()
         self.save_state()
+        self.timeline.reset_waveform_cache(self.current_track)
         return output
 
     # Delay Effect
@@ -316,6 +323,7 @@ class AudioManager:
         delayed_track[delay_samples:] += track * feedback
         self.mark_dirty()
         self.save_state()
+        self.timeline.reset_waveform_cache(self.current_track)
         return delayed_track[:len(track)]
 
     # Pitch
@@ -327,12 +335,14 @@ class AudioManager:
             n_fft = 2048
         self.mark_dirty()
         self.save_state()
+        self.timeline.reset_waveform_cache(self.current_track)
         return librosa.effects.pitch_shift(track, sr=self.sample_rate, n_steps=semitones, n_fft=n_fft)
 
     # Distortion Effect
     def apply_distortion(self, track, intensity=2.0):
         self.mark_dirty()
         self.save_state()
+        self.timeline.reset_waveform_cache(self.current_track)
         return np.tanh(track * intensity)
     
 
@@ -422,7 +432,6 @@ class AudioManager:
             self.muted_tracks = last_state["muted_tracks"]
             self.solo_tracks = last_state["solo_tracks"]
             self.track_fx = last_state["track_fx"]
-            print("Undo successful: Previous state restored.")
         else:
             print("Undo stack is empty. Nothing to undo.")
 

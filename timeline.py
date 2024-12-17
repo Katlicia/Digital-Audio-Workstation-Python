@@ -17,6 +17,7 @@ class Timeline:
         self.recording_buffer = None  # Buffer for temp track
         self.active_track = None  # Recording track
         self.track_starts = [0] * self.track_count  # Tracks starting position
+        self.waveform_cache = [None] * self.track_count
 
     def handleScroll(self, event):
         if pygame.key.get_pressed()[pygame.K_LCTRL] or pygame.key.get_pressed()[pygame.K_RCTRL]:
@@ -40,6 +41,7 @@ class Timeline:
                 max_visible_x = self.offset_x + pygame.display.get_window_size()[0]
                 if total_length_px < max_visible_x:
                     self.offset_x = max(0, self.offset_x - (max_visible_x - total_length_px))
+                self.reset_waveform_cache()
         else:
             if event.type == pygame.MOUSEWHEEL:
                 if event.y == 1:
@@ -104,14 +106,13 @@ class Timeline:
                     timeline_surface, (trackcolor), 
                     (track_x_start + 1, track_y+1, track_width, self.track_height)
                 )
-                if audio_manager.loaded_from_file[i] == False:
-                    self.draw_waveform(
-                        timeline_surface, track,
-                        track_x_start, track_y,
-                        track_width, self.track_height,
-                        color=wavecolor
-                    )
-                
+
+                if self.waveform_cache[i] is None:
+                    self.waveform_cache[i] = self.generate_waveform_surface(track, track_width, self.track_height, wavecolor)
+
+                if self.waveform_cache[i] is not None:
+                    timeline_surface.blit(self.waveform_cache[i], (track_x_start, track_y))
+
             if i < len(tracks) - 1:
                 line_y = track_y + self.track_height
                 pygame.draw.line(timeline_surface, linecolor, (0, line_y), (width, line_y), 1)
@@ -163,7 +164,6 @@ class Timeline:
 
             # Check if cursor is near timeline's range
             screen_width = pygame.display.get_window_size()[0]
-            visible_start = self.offset_x
             visible_end = self.offset_x + screen_width
 
             if self.cursor_position > visible_end - (screen_width * 0.2):
@@ -195,47 +195,40 @@ class Timeline:
         self.offset_x = 0
         self.is_playing = False
         self.is_recording = False
+        self.reset_waveform_cache()
 
 
-    def draw_waveform(self, surface, track, x, y, width, height, color):
+    def generate_waveform_surface(self, track, width, height, color):
         """
-        Draws the waveform of a track.
-        
-        Args:
-            surface: Pygame surface
-            track: Numpy array, sound data.
-            x, y: Coordinates.
-            width, height: Width height.
-            unit_width: Pixel width per second.
-            color: Color of the waveform.
+        Generates a cached waveform surface for the given track.
         """
         if track is None or len(track) == 0:
-            return
+            return None
 
+        # Waveform normalization
         waveform = track / np.max(np.abs(track))
-
         samples_per_pixel = max(1, len(waveform) // width)
         reduced_waveform = [
             (np.min(waveform[i:i+samples_per_pixel]), np.max(waveform[i:i+samples_per_pixel]))
             for i in range(0, len(waveform), samples_per_pixel)
         ]
 
-        mid_y = y + height // 2
-
-        top_points = []
-        bottom_points = []
-
+        waveform_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        waveform_surface.fill((0, 0, 0, 0))
+        mid_y = height // 2
         for i, (min_val, max_val) in enumerate(reduced_waveform):
-            pos_x = x + i
+            pos_x = i
             top_y = mid_y - int(max_val * (height // 2))
             bottom_y = mid_y - int(min_val * (height // 2))
+            pygame.draw.line(waveform_surface, color, (pos_x, top_y), (pos_x, bottom_y))
 
-            if x <= pos_x < x + width:
-                top_points.append((pos_x, top_y))
-                bottom_points.append((pos_x, bottom_y))
+        return waveform_surface
 
-        if top_points and bottom_points:
-            bottom_points.reverse()
-            pygame.draw.polygon(surface, color, top_points + bottom_points, 0)
-
-
+    def reset_waveform_cache(self, track_index=None):
+        """
+        Resets waveform cache for all or a specific track.
+        """
+        if track_index is not None:
+            self.waveform_cache[track_index] = None
+        else:
+            self.waveform_cache = [None] * self.track_count

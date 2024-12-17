@@ -88,30 +88,30 @@ volumeDownButton = ImageButton(volume_down_button_x, menu_button_y_pos, f"images
 
 file_menu_open = False
 file_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Load Project", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV/MP3", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos + menu_button_height * 3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos+menu_button_height, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Import as WAV/MP3", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos+menu_button_height*2, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Export as WAV/MP3", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border, menu_button_y_pos+menu_button_height*3, 120, menu_button_height, win, rectcolor, linecolor, text_color, "Load Project", font_size=15)
 
 ]
 
 theme_menu_open = False
 theme_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Dark", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 2, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Light", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 3, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Strawberry", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 4, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Green Tea", font_size=15),
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 5, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Mochi", font_size=15), 
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 6, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Sakura", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos+menu_button_height, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Dark", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos+menu_button_height * 2, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Light", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos+menu_button_height * 3, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Strawberry", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos+menu_button_height * 4, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Green Tea", font_size=15),
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos+menu_button_height * 5, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Mochi", font_size=15), 
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos+menu_button_height * 6, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Sakura", font_size=15)
 ]
 
 save_menu_open = False
 save_menu_buttons = [
-    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*2, menu_button_y_pos + menu_button_height, 83, menu_button_height, win, rectcolor, linecolor, text_color, "Save Project", font_size=15)
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*2, menu_button_y_pos+menu_button_height, 83, menu_button_height, win, rectcolor, linecolor, text_color, "Save Project", font_size=15)
 ]
 
 edit_menu_open = False
 edit_menu_buttons = [
-     Button(menu_button_start_pos_x+gui_line_border+menu_button_width, menu_button_y_pos + menu_button_height, 50, menu_button_height, win, rectcolor, linecolor, text_color, "Undo", font_size=15)
+     Button(menu_button_start_pos_x+gui_line_border+menu_button_width, menu_button_y_pos+menu_button_height, 50, menu_button_height, win, rectcolor, linecolor, text_color, "Undo", font_size=15)
 ]
 
 MenuButtonList = [
