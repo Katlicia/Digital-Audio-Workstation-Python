@@ -3,7 +3,6 @@ pydub
 sounddevice
 numpy
 soundfile
-tkinter
 wave
 os
 librosa
