@@ -24,7 +24,6 @@ class AudioManager:
         self.muted_tracks = [False] * max_tracks
         self.solo_tracks = [False] * max_tracks
         self.loaded_from_file = [False] * max_tracks
-        self.effects = [{} for _ in range(max_tracks)]
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -155,13 +154,13 @@ class AudioManager:
         for i, track in enumerate(self.tracks):
             if track is not None:
                 # Apply effects before exporting
-                track_with_effects = self.apply_effects(track, i)
+                # track_with_effects = self.apply_effects(track, i)
 
-                if len(track_with_effects.shape) > 1:
-                    track_with_effects = np.mean(track_with_effects, axis=1)
+                if len(track.shape) > 1:
+                    track = np.mean(track, axis=1)
 
                 track_start_in_samples = int(self.timeline.track_starts[i] / self.timeline.unit_width * self.sample_rate)
-                mixed_audio[track_start_in_samples:track_start_in_samples + len(track_with_effects)] += track_with_effects
+                mixed_audio[track_start_in_samples:track_start_in_samples + len(track)] += track
 
         if np.max(np.abs(mixed_audio)) > 0:
             mixed_audio /= np.max(np.abs(mixed_audio))
@@ -255,31 +254,6 @@ class AudioManager:
         else:
             print("Invalid track.")
 
-    def apply_effects(self, track, track_index):
-        """
-        Applies all effects to the given track.
-        """
-        effects = self.effects[track_index]
-
-        # Apply effects in order
-        if "volume" in effects:
-            track = self.apply_volume(track, effects["volume"])
-        if "equalizer" in effects:
-            track = self.apply_equalizer(track, self.sample_rate, **effects["equalizer"])
-        if "reverb" in effects:
-            track = self.apply_reverb(track, effects["reverb"])
-        if "delay" in effects:
-            track = self.apply_delay(track, self.sample_rate, **effects["delay"])
-        if "pitch_shift" in effects:
-            track = self.apply_pitch_shift(track, self.sample_rate, effects["pitch_shift"])
-        if "distortion" in effects:
-            track = self.apply_distortion(track, effects["distortion"])
-        if "pan" in effects:
-            track = self.apply_pan(track, effects["pan"])
-        
-        return track
-
-
     # Volume (Gain) Effect
     def apply_volume(self, track, gain=1.0):
         return track * gain
@@ -316,9 +290,10 @@ class AudioManager:
         delayed_track[delay_samples:] += track * feedback
         return delayed_track[:len(track)]
 
-    # Pitch Shift Effect
+    # Pitch
     def apply_pitch_shift(self, track, sample_rate, semitones=0):
-        return librosa.effects.pitch_shift(track, sr=sample_rate, n_steps=semitones)
+        n_fft = min(2048, len(track))  # Track uzunluğu kısa ise n_fft'yi küçült
+        return librosa.effects.pitch_shift(track, sr=sample_rate, n_steps=semitones, n_fft=n_fft)
 
     # Distortion Effect
     def apply_distortion(self, track, intensity=1.0):
