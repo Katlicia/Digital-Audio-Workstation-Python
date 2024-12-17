@@ -339,4 +339,3 @@ class AudioManager:
     # Distortion Effect
     def apply_distortion(self, track, intensity=2.0):
         return np.tanh(track * intensity)
-

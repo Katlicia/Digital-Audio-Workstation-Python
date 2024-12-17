@@ -21,6 +21,8 @@ track_start_y = 50
 editing_track = None
 original_text = ""
 playing_now = False
+dragging_effect = None
+dragging_pos = (0, 0)
 
 theme = darkTheme
 themestr = "darkTheme"
@@ -109,7 +111,7 @@ TrackSoloButtonList = [
 
 
 effectButtonList = [
-    {"button": Button(700, 680, 120, 30, win, linecolor, rectcolor, text_color, "Reverb", 15), "effect": "apply_reverb", "params": {"intensity": 0.8}},
+    {"button": Button(700, 680, 120, 30, win, linecolor, rectcolor, text_color, "Reverb", 15), "effect": "apply_reverb", "params": {"intensity": 0.8, "max_length": 2.0}},
     {"button": Button(700, 720, 120, 30, win, linecolor, rectcolor, text_color, "Delay", 15), "effect": "apply_delay", "params": {"delay_time": 0.3, "feedback": 0.5}},
     {"button": Button(700, 760, 120, 30, win, linecolor, rectcolor, text_color, "Pitch Shift", 15), "effect": "apply_pitch_shift", "params": {"semitones": 3}},
     {"button": Button(700, 800, 120, 30, win, linecolor, rectcolor, text_color, "Distortion", 15), "effect": "apply_distortion", "params": {"intensity": 5.0}},
@@ -152,8 +154,51 @@ def load_track():
         if next_empty_track is not None:
             audio_manager.load_audio_file(file_path, next_empty_track)
 
-dragging_effect = None  # Hangi buton sürükleniyor?
-dragging_pos = (0, 0)   # Sürüklenen butonun pozisyonu
+def show_effect_params(effect_name, default_params):
+    """
+    Kullanıcıdan efekt parametrelerini alır.
+    effect_name: Efektin adı (str)
+    default_params: Efektin varsayılan parametreleri (dict)
+    """
+    params = default_params.copy()  # Varsayılan değerleri kopyala
+
+    def save():
+        # Kullanıcının girdiği değerleri oku
+        for key, entry in entry_fields.items():
+            try:
+                params[key] = float(entry.get())  # Değeri float'a dönüştür
+            except ValueError:
+                params[key] = default_params[key]  # Geçersiz değer için varsayılanı kullan
+        root.destroy()
+
+    def cancel():
+        nonlocal params
+        params = None  # İptal durumunda None döndür
+        root.destroy()
+
+    # Tkinter popup penceresi
+    root = tk.Tk()
+    root.title(f"Edit {effect_name} Parameters")
+    root.geometry("300x200")
+    root.resizable(False, False)
+
+    entry_fields = {}
+
+    # Parametreleri göster
+    for idx, (param, value) in enumerate(default_params.items()):
+        tk.Label(root, text=f"{param}:").grid(row=idx, column=0, padx=10, pady=5)
+        entry = tk.Entry(root)
+        entry.insert(0, str(value))  # Varsayılan değeri göster
+        entry.grid(row=idx, column=1, padx=10, pady=5)
+        entry_fields[param] = entry
+
+    # Save ve Cancel butonları
+    tk.Button(root, text="Save", command=save).grid(row=len(default_params), column=0, pady=10)
+    tk.Button(root, text="Cancel", command=cancel).grid(row=len(default_params), column=1, pady=10)
+
+    root.mainloop()
+
+    return params
 
 while running:
     x, y = win.get_size()
@@ -328,7 +373,6 @@ while running:
                         # Dinamik olarak efekt fonksiyonunu çağır
                         effect_function = getattr(audio_manager, effect_name)
                         audio_manager.tracks[track_idx] = effect_function(audio_manager.tracks[track_idx], **effect_params)
-                        print(f"{effect_name} efekti Track {track_idx + 1}'e uygulandı!")
 
             dragging_effect = None  # Sürükleme işlemini sıfırla
 
