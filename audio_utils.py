@@ -1,10 +1,11 @@
 import os
 import pickle
+import time
 import wave
 import numpy as np
 import sounddevice as sd
 from pydub import AudioSegment
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import tkinter as tk
 import librosa
 from scipy.signal import fftconvolve
@@ -25,6 +26,9 @@ class AudioManager:
         self.solo_tracks = [False] * max_tracks
         self.loaded_from_file = [False] * max_tracks
         self.track_fx = [[] for _ in range(10)]
+        self.is_dirty = False  # Checks if changed from last save
+        self.current_file_path = None  # Saved file path
+        self.save_feedback = None
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -70,11 +74,11 @@ class AudioManager:
             if self.current_audio and len(self.current_audio) > 0:
                 audio_data = np.concatenate(self.current_audio, axis=0)
                 self.tracks[self.current_track] = audio_data
+                self.mark_dirty()
             else:
                 print("Warning: No audio data recorded.")
             self.current_audio = []
             self.recording = False
-
             if self.stream is not None:
                 self.stream.stop()
 
@@ -181,7 +185,6 @@ class AudioManager:
         )
 
         if not file_path:  # If user cancels
-            print("Export cancelled.")
             return
 
         filetype = file_path.split('.')[-1].lower()  # Determine the file type by extension
@@ -215,6 +218,7 @@ class AudioManager:
 
     def adjust_volume(self, change):
         self.volume_level = max(0.0, min(1.50, self.volume_level + change))
+        self.mark_dirty()
 
     def load_audio_file(self, file_path, track_index):
         """
@@ -239,7 +243,7 @@ class AudioManager:
             # Load to track.
             self.tracks[track_index] = samples
             self.loaded_from_file[track_index] = True
-            print(f"Audio file loaded into track {track_index}.")
+            self.mark_dirty()
         except Exception as e:
             print(f"Error loading audio file: {e}")
 
@@ -252,7 +256,7 @@ class AudioManager:
             self.timeline.track_starts[track_index] = 0 # Clear start position on timeline
             self.muted_tracks[track_index] = False
             self.solo_tracks[track_index] = False
-            print(f"Track {track_index + 1} removed.")
+            self.mark_dirty()
         else:
             print("Invalid track.")
 
@@ -260,6 +264,7 @@ class AudioManager:
         track = np.squeeze(track).astype(np.float32)
         track_with_gain = track * gain
         track_with_gain = np.clip(track_with_gain, -1.0, 1.0)
+        self.mark_dirty()
         return track_with_gain
 
     # Equalizer (Low, Mid, High Frequencies)
@@ -272,35 +277,31 @@ class AudioManager:
         low = bandpass_filter(track, 20, 300) * low_gain
         mid = bandpass_filter(track, 300, 3000) * mid_gain
         high = bandpass_filter(track, 3000, 20000) * high_gain
+        self.mark_dirty()
         return low + mid + high
 
     # Reverb Effect
     def apply_reverb(self, track, intensity=0.3, max_length=2.0):
         track = np.squeeze(track).astype(np.float32)
-
         track_max = np.max(np.abs(track)) if np.max(np.abs(track)) > 0 else 1.0
         track = track / track_max 
-
         max_decay_samples = int(self.sample_rate * max_length)
         decay = np.linspace(1, 0, max_decay_samples, dtype=np.float32)
         decay /= np.sum(decay)
-
         reverberated = fftconvolve(track, decay, mode="full")[:len(track)]
-
         output = (1 - intensity) * track + (intensity * reverberated)
-
         output = np.clip(output, -1.0, 1.0)
-
+        self.mark_dirty()
         return output
 
     # Delay Effect
     def apply_delay(self, track, delay_time=0.3, feedback=0.5):
         track = np.squeeze(track)   # 1 Dimensional
         delay_samples = int(delay_time * self.sample_rate)
-
         delayed_track = np.zeros(len(track) + delay_samples, dtype=np.float32)
         delayed_track[:len(track)] += track
         delayed_track[delay_samples:] += track * feedback
+        self.mark_dirty()
         return delayed_track[:len(track)]
 
     # Pitch
@@ -310,14 +311,25 @@ class AudioManager:
             n_fft = len(track)  # Use a n_fft no larger than the track length
         else:
             n_fft = 2048
-
+        self.mark_dirty()
         return librosa.effects.pitch_shift(track, sr=self.sample_rate, n_steps=semitones, n_fft=n_fft)
 
     # Distortion Effect
     def apply_distortion(self, track, intensity=2.0):
+        self.mark_dirty()
         return np.tanh(track * intensity)
     
+
+    def mark_dirty(self):
+        self.is_dirty = True
+
     def save_project(self, TrackRectList):
+        if self.current_file_path:
+            self._save_to_path(self.current_file_path, TrackRectList)
+        else:
+            self._save_as_new(TrackRectList)
+
+    def _save_as_new(self, TrackRectList):
         root = tk.Tk()
         root.withdraw()
         file_path = filedialog.asksaveasfilename(
@@ -327,18 +339,26 @@ class AudioManager:
             title="Save Project"
         )
         if file_path:
-            try:
-                with open(file_path, 'wb') as f:
-                    project_data = {
-                        "tracks": self.tracks,
-                        "muted_tracks": self.muted_tracks,
-                        "solo_tracks": self.solo_tracks,
-                        "track_fx": self.track_fx,
-                        "track_names": [track.text for track in TrackRectList]  # Save track names
-                    }
-                    pickle.dump(project_data, f)
-            except Exception as e:
-                print(f"Error saving project: {e}")
+            self.current_file_path = file_path
+            self._save_to_path(file_path, TrackRectList)
+            self.save_feedback = (f"Project saved.", time.time())
+
+    def _save_to_path(self, file_path, TrackRectList):
+        try:
+            with open(file_path, 'wb') as f:
+                project_data = {
+                    "tracks": self.tracks,
+                    "muted_tracks": self.muted_tracks,
+                    "solo_tracks": self.solo_tracks,
+                    "track_fx": self.track_fx,
+                    "track_names": [track.text for track in TrackRectList]
+                }
+                pickle.dump(project_data, f)
+            self.is_dirty = False
+            self.save_feedback = (f"Project saved.", time.time())
+        except Exception as e:
+            self.save_feedback = (f"Error saving project: {e}", time.time())
+            print(f"Error saving project: {e}")
 
     def load_project(self, TrackRectList):
         root = tk.Tk()
@@ -361,6 +381,9 @@ class AudioManager:
                     for i, track_name in enumerate(loaded_track_names):
                         if i < len(TrackRectList):
                             TrackRectList[i].text = track_name
-
+                    
+                    self.current_file_path = file_path 
+                    self.is_dirty = False
             except Exception as e:
+                messagebox.showerror("Error", f"Error loading project: {e}")
                 print(f"Error loading project: {e}")

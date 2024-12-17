@@ -46,5 +46,5 @@ button_gap_y = 100
 shadow_offset = 5
 shadow_color = (50, 50, 50)
 
-
+SAVE_FEEDBACK_DURATION = 3
 SETTINGS_FILE = "settings.json"
