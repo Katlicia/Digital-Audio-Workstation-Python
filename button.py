@@ -33,10 +33,20 @@ class Button:
         self.active = False
 
     def draw(self):
-        pygame.draw.rect(self.win, self.passive_color, self.rect)
-        if self.text != None:
+        # Hover kontrolü
+        mouse_pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(mouse_pos):
+            color = self.active_color  # Hover rengi
+        else:
+            color = self.passive_color  # Normal rengi
+        
+        # Butonu çiz
+        pygame.draw.rect(self.win, color, self.rect)
+        
+        # Buton metni ekle
+        if self.text is not None:
             text_surface = self.font.render(self.text, True, self.text_color)
-            text_rect = text_surface.get_rect(center = self.rect.center)
+            text_rect = text_surface.get_rect(center=self.rect.center)
             self.win.blit(text_surface, text_rect)
     
     def drawLeft(self):
