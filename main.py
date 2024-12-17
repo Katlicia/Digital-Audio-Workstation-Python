@@ -397,7 +397,8 @@ while running:
                     audio_manager.start_recording()
                     timeline.start_timeline_recording(audio_manager.current_track)
                     recordButton.setImage("images/recording.png")
-            else:
+    
+            if recordButton.isClicked(pos) and audio_manager.find_next_empty_track() == None:
                 root = tk.Tk()
                 root.withdraw()
                 messagebox.showwarning("Track Full", "All 10 tracks are full. Cannot start recording!")
@@ -490,6 +491,12 @@ while running:
                     audio_manager.stop_playing()
                     timeline.reset_timeline()
                     playing_now = False
+            
+            if event.key == pygame.K_z and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                audio_manager.undo()
+            
+            if event.key == pygame.K_s and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                audio_manager.save_project(TrackRectList)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             for effect in effectButtonList:

@@ -10,6 +10,8 @@ import tkinter as tk
 import librosa
 from scipy.signal import fftconvolve
 
+from config import MAX_UNDO_STACK_SIZE
+
 class AudioManager:
     def __init__(self, sample_rate=44100, max_tracks=10):
         self.sample_rate = sample_rate
@@ -29,6 +31,7 @@ class AudioManager:
         self.is_dirty = False  # Checks if changed from last save
         self.current_file_path = None  # Saved file path
         self.save_feedback = None
+        self.undo_stack = []
 
     def audio_playback_callback(self, outdata, frames, time, status):
         if self.playing_audio is not None:
@@ -60,6 +63,7 @@ class AudioManager:
         next_track = self.find_next_empty_track()
         if next_track is not None:
             self.recording = True
+            self.save_state()
             self.current_track = next_track
             self.current_audio = []
 
@@ -158,8 +162,6 @@ class AudioManager:
 
         for i, track in enumerate(self.tracks):
             if track is not None:
-                # Apply effects before exporting
-                # track_with_effects = self.apply_effects(track, i)
 
                 if len(track.shape) > 1:
                     track = np.mean(track, axis=1)
@@ -257,6 +259,7 @@ class AudioManager:
             self.muted_tracks[track_index] = False
             self.solo_tracks[track_index] = False
             self.mark_dirty()
+            self.save_state()
         else:
             print("Invalid track.")
 
@@ -265,6 +268,7 @@ class AudioManager:
         track_with_gain = track * gain
         track_with_gain = np.clip(track_with_gain, -1.0, 1.0)
         self.mark_dirty()
+        self.save_state()
         return track_with_gain
 
     # Equalizer (Low, Mid, High Frequencies)
@@ -278,6 +282,7 @@ class AudioManager:
         mid = bandpass_filter(track, 300, 3000) * mid_gain
         high = bandpass_filter(track, 3000, 20000) * high_gain
         self.mark_dirty()
+        self.save_state()
         return low + mid + high
 
     # Reverb Effect
@@ -292,6 +297,7 @@ class AudioManager:
         output = (1 - intensity) * track + (intensity * reverberated)
         output = np.clip(output, -1.0, 1.0)
         self.mark_dirty()
+        self.save_state()
         return output
 
     # Delay Effect
@@ -302,6 +308,7 @@ class AudioManager:
         delayed_track[:len(track)] += track
         delayed_track[delay_samples:] += track * feedback
         self.mark_dirty()
+        self.save_state()
         return delayed_track[:len(track)]
 
     # Pitch
@@ -312,11 +319,13 @@ class AudioManager:
         else:
             n_fft = 2048
         self.mark_dirty()
+        self.save_state()
         return librosa.effects.pitch_shift(track, sr=self.sample_rate, n_steps=semitones, n_fft=n_fft)
 
     # Distortion Effect
     def apply_distortion(self, track, intensity=2.0):
         self.mark_dirty()
+        self.save_state()
         return np.tanh(track * intensity)
     
 
@@ -387,3 +396,26 @@ class AudioManager:
             except Exception as e:
                 messagebox.showerror("Error", f"Error loading project: {e}")
                 print(f"Error loading project: {e}")
+
+    def save_state(self):
+        state = {
+            "tracks": [track.copy() if track is not None else None for track in self.tracks],
+            "muted_tracks": self.muted_tracks[:],
+            "solo_tracks": self.solo_tracks[:],
+            "track_fx": [fx_list[:] for fx_list in self.track_fx]
+        }
+        self.undo_stack.append(state)
+        if len(self.undo_stack) > MAX_UNDO_STACK_SIZE:
+            self.undo_stack.pop(0)
+    
+    def undo(self):
+        if self.undo_stack:
+            last_state = self.undo_stack.pop()
+            self.tracks = last_state["tracks"]
+            self.muted_tracks = last_state["muted_tracks"]
+            self.solo_tracks = last_state["solo_tracks"]
+            self.track_fx = last_state["track_fx"]
+            print("Undo successful: Previous state restored.")
+        else:
+            print("Undo stack is empty. Nothing to undo.")
+

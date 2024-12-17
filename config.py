@@ -48,3 +48,5 @@ shadow_color = (50, 50, 50)
 
 SAVE_FEEDBACK_DURATION = 3
 SETTINGS_FILE = "settings.json"
+
+MAX_UNDO_STACK_SIZE = 20
