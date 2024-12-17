@@ -1,4 +1,5 @@
 import os
+import pickle
 import wave
 import numpy as np
 import sounddevice as sd
@@ -338,3 +339,52 @@ class AudioManager:
     # Distortion Effect
     def apply_distortion(self, track, intensity=2.0):
         return np.tanh(track * intensity)
+    
+    def save_project(self, TrackRectList):
+        root = tk.Tk()
+        root.withdraw()
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".daw",
+            filetypes=[("DAW Project Files", "*.daw")],
+            title="Save Project"
+        )
+        if file_path:
+            try:
+                with open(file_path, 'wb') as f:
+                    project_data = {
+                        "tracks": self.tracks,
+                        "muted_tracks": self.muted_tracks,
+                        "solo_tracks": self.solo_tracks,
+                        "track_fx": self.track_fx,
+                        "track_names": [track.text for track in TrackRectList]  # Track isimlerini kaydet
+                    }
+                    pickle.dump(project_data, f)
+                print(f"Project saved to {file_path}")
+            except Exception as e:
+                print(f"Error saving project: {e}")
+
+    def load_project(self, TrackRectList):
+        root = tk.Tk()
+        root.withdraw()
+        file_path = filedialog.askopenfilename(
+            filetypes=[("DAW Project Files", "*.daw")],
+            title="Load Project"
+        )
+        if file_path:
+            try:
+                with open(file_path, 'rb') as f:
+                    project_data = pickle.load(f)
+                    self.tracks = project_data["tracks"]
+                    self.muted_tracks = project_data["muted_tracks"]
+                    self.solo_tracks = project_data["solo_tracks"]
+                    self.track_fx = project_data["track_fx"]
+
+                    # Track isimlerini yükle
+                    loaded_track_names = project_data.get("track_names", [])
+                    for i, track_name in enumerate(loaded_track_names):
+                        if i < len(TrackRectList):
+                            TrackRectList[i].text = track_name
+
+                    print(f"Project loaded from {file_path}")
+            except Exception as e:
+                print(f"Error loading project: {e}")

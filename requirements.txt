@@ -7,3 +7,9 @@ tkinter
 wave
 os
 librosa
+pickle
+re
+tkinter
+scipy
+os
+json

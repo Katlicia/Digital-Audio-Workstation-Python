@@ -1,3 +1,5 @@
+import json
+import os
 import re
 import threading
 import numpy as np
@@ -28,8 +30,46 @@ playing_now = False
 dragging_effect = None
 dragging_pos = (0, 0)
 
-theme = darkTheme
-themestr = "darkTheme"
+def save_theme_to_file(theme_name):
+    """
+    Saves theme to settings.json
+    """
+    try:
+        with open(SETTINGS_FILE, 'w') as f:
+            json.dump({"theme": theme_name}, f)
+    except Exception as e:
+        print(f"Error saving theme: {e}")
+
+def load_theme_from_file():
+    """
+    Uploads theme from settings.json
+    """
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, 'r') as f:
+                data = json.load(f)
+                return data.get("theme", "darkTheme")
+        except Exception as e:
+            print(f"Error loading theme: {e}")
+            return "darkTheme"
+    return "darkTheme"
+
+loaded_theme = load_theme_from_file()
+if loaded_theme == "darkTheme":
+    theme = darkTheme
+elif loaded_theme == "lightTheme":
+    theme = lightTheme
+elif loaded_theme == "strawberryTheme":
+    theme = strawberryTheme
+elif loaded_theme == "greenteaTheme":
+    theme = greenteaTheme
+elif loaded_theme == "mochiTheme":
+    theme = mochiTheme
+elif loaded_theme == "sakuraTheme":
+    theme = sakuraTheme
+
+themestr = loaded_theme
+
 timelinetrackcolor = theme[0] # Timelinetrack color
 temptrackcolor = theme[1] # Temp track, waveform color
 linecolor = theme[2] # Line, active button color
@@ -60,6 +100,11 @@ theme_menu_buttons = [
     Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 4, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Green Tea", font_size=15),
     Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 5, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Mochi", font_size=15), 
     Button(menu_button_start_pos_x+gui_line_border+menu_button_width*3, menu_button_y_pos + menu_button_height * 6, 80, menu_button_height, win, rectcolor, linecolor, text_color, "Sakura", font_size=15)
+]
+
+save_menu_open = False
+save_menu_buttons = [
+    Button(menu_button_start_pos_x+gui_line_border+menu_button_width*2, menu_button_y_pos + menu_button_height, 83, menu_button_height, win, rectcolor, linecolor, text_color, "Save Project", font_size=15)
 ]
 
 MenuButtonList = [
@@ -137,6 +182,11 @@ def update_menu_colors():
         theme_button.passive_color = rectcolor
         theme_button.active_color = linecolor
         theme_button.text_color = text_color
+    
+    for save_button in save_menu_buttons:
+        save_button.passive_color = rectcolor
+        save_button.active_color = linecolor
+        save_button.text_color = text_color
 
 def load_track():
     """
@@ -233,8 +283,12 @@ def show_effect_params(effect_name, default_params):
     return result[0] if result else None
 
 def pascal_to_snake(name):
-    """PascalCase bir ismi snake_case'e dönüştür."""
+    """PascalCase to snake_case."""
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).replace(" ", "").lower()
+
+
+saveButton = Button(400, 10, 120, 25, win, rectcolor, linecolor, text_color, "Save Project", 15)
+loadButton = Button(530, 10, 120, 25, win, rectcolor, linecolor, text_color, "Load Project", 15)
 
 
 while running:
@@ -261,6 +315,14 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
 
+            if saveButton.isClicked(pos):
+                audio_manager.save_project(TrackRectList)
+
+            if loadButton.isClicked(pos):
+                audio_manager.load_project(TrackRectList)
+                timeline.reset_timeline()
+
+
             if theme_menu_open:
                 for theme_button in theme_menu_buttons:
                     if theme_button.isClicked(pos):
@@ -282,8 +344,14 @@ while running:
                         elif theme_button.text == "Sakura":
                             theme = sakuraTheme
                             themestr = "sakuraTheme"
-                update_menu_colors()
+                        save_theme_to_file(themestr)
                 theme_menu_open = False
+
+            elif save_menu_open:
+                for save_button in save_menu_buttons:
+                    if save_button.isClicked(pos):
+                        audio_manager.save_project(TrackRectList)
+                save_menu_open = False
 
             elif file_menu_open:
                 for file_button in file_menu_buttons:
@@ -299,6 +367,8 @@ while running:
                 file_menu_open = not file_menu_open
             elif MenuButtonList[-1].isClicked(pos):
                 theme_menu_open = not theme_menu_open
+            elif MenuButtonList[-2].isClicked(pos):
+                save_menu_open = not save_menu_open
 
             if recordButton.isClicked(pos):
                 if audio_manager.recording:
@@ -546,6 +616,10 @@ while running:
         for theme_button in theme_menu_buttons:
             theme_button.drawLeft()
     
+    if save_menu_open:
+        for save_button in save_menu_buttons:
+            save_button.drawLeft()
+    
     fx_frame_rect = pygame.Rect(x / 2 - 400 - gui_line_border, timeline_y + timeline_height + 25 - gui_line_border, 800 + gui_line_border, 300 + gui_line_border)
     pygame.draw.rect(win, linecolor, fx_frame_rect)
 
@@ -594,6 +668,10 @@ while running:
     if dragging_effect:
         effect_surface = font.render(dragging_effect["button"].text, True, (255, 255, 255))
         win.blit(effect_surface, (dragging_pos[0] - 20, dragging_pos[1] - 10))
+
+    saveButton.draw()
+    loadButton.draw()
+
 
     update_menu_colors()
     pygame.display.update()
