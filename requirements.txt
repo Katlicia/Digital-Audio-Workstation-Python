@@ -3,13 +3,7 @@ pydub
 sounddevice
 numpy
 soundfile
+tkinter
 wave
 os
 librosa
-pickle
-re
-tkinter
-scipy
-os
-json
-time
