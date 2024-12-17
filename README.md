@@ -5,7 +5,7 @@ A custom-built, feature-rich **Digital Audio Workstation** (DAW) designed for mu
 ## 📋 Table of Contents
 
 - [Features](#features)
-- [Installation](#installation)
+- [Installation](#Installation)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
 - [Available Effects](#available-effects)
