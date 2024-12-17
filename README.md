@@ -28,6 +28,8 @@ A custom-built, feature-rich **Digital Audio Workstation** (DAW) designed for mu
 
 ---
 
+![DAW](images/screenshot.png)
+
 ## 🛠️ Installation
 
 ### 1. Clone the Repository
