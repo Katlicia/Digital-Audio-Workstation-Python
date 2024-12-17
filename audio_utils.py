@@ -130,7 +130,7 @@ class AudioManager:
                         mixed_audio[start_in_mixed:start_in_mixed + length_to_add] += track[start_in_track:start_in_track + length_to_add]
 
             # if np.max(np.abs(mixed_audio)) > 0:
-            #     mixed_audio /= np.max(np.abs(mixed_audio))  # Normalize et
+            #     mixed_audio /= np.max(np.abs(mixed_audio))
 
             self.playing_audio = mixed_audio[cursor_sample_position:]
             self.current_audio_position = 0

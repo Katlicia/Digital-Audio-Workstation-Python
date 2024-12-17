@@ -1,3 +1,6 @@
+import re
+import threading
+import numpy as np
 import pygame
 from button import Button, ImageButton
 from config import *
@@ -152,6 +155,7 @@ def show_effect_params(effect_name, default_params):
     It receives effect parameters from the user and checks them according to the given value ranges.
     """
     params = default_params.copy()
+    result = []
 
     effect_limits = {
         "apply_reverb": {"Intensity": (0.0, 2.0), "Max Length": (0.1, 5.0)},
@@ -162,73 +166,75 @@ def show_effect_params(effect_name, default_params):
         "apply_equalizer": {"Low Gain": (0.0, 2.0), "Mid Gain": (0.0, 2.0), "High Gain": (0.0, 2.0)}
     }
 
-    def save():
-        nonlocal warning_label
-        valid_input = True
-        warning_message = ""
+    def tkinter_task():
+        nonlocal result
+        root = tk.Tk()
+        root.title(f"Edit {effect_name} Parameters")
+        root.geometry("350x300")
+        root.resizable(False, False)
 
-        for key, entry in entry_fields.items():
-            try:
-                value = float(entry.get())
-                min_val, max_val = effect_limits[effect_name][key]
-                if not (min_val <= value <= max_val):
+        entry_fields = {}
+        warning_label = tk.Label(root, text="", fg="red")
+        warning_label.grid(row=len(default_params) + 1, column=0, columnspan=2, pady=5)
+
+        def save():
+            valid_input = True
+            warning_message = ""
+
+            for key, entry in entry_fields.items():
+                try:
+                    value = float(entry.get())
+                    min_val, max_val = effect_limits[effect_name][key]
+                    if not (min_val <= value <= max_val):
+                        valid_input = False
+                        warning_message += f"{key}: {min_val} - {max_val}\n"
+                    else:
+                        params[key] = value
+                except ValueError:
                     valid_input = False
-                    warning_message += f"{key}: {min_val} - {max_val}\n"
-                else:
-                    params[key] = value
-            except ValueError:
-                valid_input = False
-                warning_message += f"{key}: Geçerli bir sayı girin!\n"
+                    warning_message += f"{key}: Enter a valid number!\n"
 
-        if valid_input:
+            if valid_input:
+                result.append(params.copy())
+                root.quit()
+                root.destroy()
+            else:
+                warning_label.config(text="Incorrect entry!\n" + warning_message)
+
+        def cancel():
+            result.append(None)
+            root.quit()
             root.destroy()
-        else:
-            warning_label.config(text="Hatalı giriş!\n" + warning_message)
 
-    def cancel():
-        nonlocal params
-        params = None
-        root.destroy()
+        # snake_case → Pascal Case
+        def snake_to_pascal(name):
+            return " ".join(word.capitalize() for word in name.split("_"))
 
-    # Tkinter popup
-    root = tk.Tk()
-    root.title(f"Edit {effect_name} Parameters")
-    root.geometry("350x300")
-    root.resizable(False, False)
+        # Show args
+        for idx, (param, value) in enumerate(default_params.items()):
+            display_name = snake_to_pascal(param)
+            tk.Label(root, text=f"{display_name}:").grid(row=idx, column=0, padx=10, pady=5)
+            entry = tk.Entry(root)
+            entry.insert(0, str(value))
+            entry.grid(row=idx, column=1, padx=10, pady=5)
+            entry_fields[display_name] = entry
 
-    entry_fields = {}
-    warning_label = tk.Label(root, text="", fg="red")
-    warning_label.grid(row=len(default_params) + 1, column=0, columnspan=2, pady=5)
+        # Save and cancel buttons
+        tk.Button(root, text="Save", command=save).grid(row=len(default_params) + 2, column=0, pady=10)
+        tk.Button(root, text="Cancel", command=cancel).grid(row=len(default_params) + 2, column=1, pady=10)
 
-    # snake_case → Pascal Case
-    def snake_to_pascal(name):
-        return " ".join(word.capitalize() for word in name.split("_"))
+        root.mainloop()
 
-    # Show args
-    for idx, (param, value) in enumerate(default_params.items()):
-        display_name = snake_to_pascal(param)
-        tk.Label(root, text=f"{display_name}:").grid(row=idx, column=0, padx=10, pady=5)
-        entry = tk.Entry(root)
-        entry.insert(0, str(value))
-        entry.grid(row=idx, column=1, padx=10, pady=5)
-        entry_fields[display_name] = entry
+    # Run Tkinter in a separate thread
+    thread = threading.Thread(target=tkinter_task)
+    thread.start()
+    thread.join()
 
-    # Save and cancel
-    tk.Button(root, text="Save", command=save).grid(row=len(default_params) + 2, column=0, pady=10)
-    tk.Button(root, text="Cancel", command=cancel).grid(row=len(default_params) + 2, column=1, pady=10)
+    return result[0] if result else None
 
-    root.mainloop()
-
-    if params is None:
-        return None
-
-    # Return args to snake_case
-    final_params = {}
-    for snake_name in default_params.keys():
-        pascal_name = snake_to_pascal(snake_name)
-        final_params[snake_name] = params.get(pascal_name, default_params[snake_name])
-
-    return final_params
+def pascal_to_snake(name):
+    """PascalCase bir ismi snake_case'e dönüştür."""
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).replace(" ", "").lower()
 
 
 while running:
@@ -409,13 +415,22 @@ while running:
 
                     user_params = show_effect_params(effect_name, default_params)
                     
-                    if user_params:
-                        if audio_manager.tracks[track_idx] is not None:
-                            effect_function = getattr(audio_manager, effect_name)
-                            audio_manager.tracks[track_idx] = effect_function(
-                                audio_manager.tracks[track_idx], **user_params
-                            )
+                if user_params:
+                    if audio_manager.tracks[track_idx] is not None:
+                        effect_function = getattr(audio_manager, effect_name)
+
+                        # Pascal Case → Snake Case
+                        snake_case_params = {pascal_to_snake(k): v for k, v in user_params.items()}
+
+                        # Change sound data to float32
+                        track_data = audio_manager.tracks[track_idx].astype(np.float32)
+
+                        try:
+                            audio_manager.tracks[track_idx] = effect_function(track_data, **snake_case_params)
                             audio_manager.track_fx[track_idx].append(effect_name.replace("apply_", "").capitalize())
+                        except Exception as e:
+                            print(f"Error applying effect: {e}")
+
             dragging_effect = None
 
     wincolor = theme[4]
@@ -507,7 +522,6 @@ while running:
 
                     start_x += fx_rect.width + 10
                 
-
     
     pygame.draw.line(win, linecolor, (timeline_x-1,  timeline_y), (timeline_x-1, timeline_y+timeline_height))
 
