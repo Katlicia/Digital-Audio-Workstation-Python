@@ -120,7 +120,7 @@ effectButtonList = [
 ]
 
 
-# Gain (gain 0.0 - 2.0)
+# Gain (gain 0.0 - 5.0)
 # EQ (low_gain = 1.0, mid_gan = 1.0, high_gain = 1.0) 0.0 - 2.0 1 Değiştirmez
 # Reverb (intensity = 0.0 - 1.0, max_length = 2.0 saniye)
 # Delay (delay_time = 0.1 - 1.0 saniye, feedback = 0.0 - 1.0 tam yankı)
@@ -156,49 +156,89 @@ def load_track():
 
 def show_effect_params(effect_name, default_params):
     """
-    Kullanıcıdan efekt parametrelerini alır.
-    effect_name: Efektin adı (str)
-    default_params: Efektin varsayılan parametreleri (dict)
+    Kullanıcıdan efekt parametrelerini alır ve verilen değer aralıklarına göre kontrol eder.
     """
     params = default_params.copy()  # Varsayılan değerleri kopyala
 
+    # Parametre sınırlarını tanımla
+    effect_limits = {
+        "apply_reverb": {"Intensity": (0.0, 2.0), "Max Length": (0.1, 5.0)},
+        "apply_delay": {"Delay Time": (0.1, 2.0), "Feedback": (0.0, 1.0)},
+        "apply_pitch_shift": {"Semitones": (-12, 12)},
+        "apply_distortion": {"Intensity": (0.5, 5.0)},
+        "apply_volume": {"Gain": (0.0, 10.0)},
+        "apply_equalizer": {"Low Gain": (0.0, 2.0), "Mid Gain": (0.0, 2.0), "High Gain": (0.0, 2.0)}
+    }
+
     def save():
-        # Kullanıcının girdiği değerleri oku
+        nonlocal warning_label
+        valid_input = True
+        warning_message = ""
+
         for key, entry in entry_fields.items():
             try:
-                params[key] = float(entry.get())  # Değeri float'a dönüştür
+                value = float(entry.get())  # Değeri float'a dönüştür
+                min_val, max_val = effect_limits[effect_name][key]
+                if not (min_val <= value <= max_val):  # Sınır kontrolü
+                    valid_input = False
+                    warning_message += f"{key}: {min_val} - {max_val}\n"
+                else:
+                    params[key] = value
             except ValueError:
-                params[key] = default_params[key]  # Geçersiz değer için varsayılanı kullan
-        root.destroy()
+                valid_input = False
+                warning_message += f"{key}: Geçerli bir sayı girin!\n"
+
+        if valid_input:
+            root.destroy()  # Tüm girişler geçerliyse pencereyi kapat
+        else:
+            warning_label.config(text="Hatalı giriş!\n" + warning_message)
 
     def cancel():
         nonlocal params
-        params = None  # İptal durumunda None döndür
+        params = None
         root.destroy()
 
     # Tkinter popup penceresi
     root = tk.Tk()
     root.title(f"Edit {effect_name} Parameters")
-    root.geometry("300x200")
+    root.geometry("350x300")
     root.resizable(False, False)
 
     entry_fields = {}
+    warning_label = tk.Label(root, text="", fg="red")
+    warning_label.grid(row=len(default_params) + 1, column=0, columnspan=2, pady=5)
+
+    # Parametre isimlerini dönüştürme: snake_case → Pascal Case
+    def snake_to_pascal(name):
+        return " ".join(word.capitalize() for word in name.split("_"))
 
     # Parametreleri göster
     for idx, (param, value) in enumerate(default_params.items()):
-        tk.Label(root, text=f"{param}:").grid(row=idx, column=0, padx=10, pady=5)
+        display_name = snake_to_pascal(param)
+        tk.Label(root, text=f"{display_name}:").grid(row=idx, column=0, padx=10, pady=5)
         entry = tk.Entry(root)
-        entry.insert(0, str(value))  # Varsayılan değeri göster
+        entry.insert(0, str(value))
         entry.grid(row=idx, column=1, padx=10, pady=5)
-        entry_fields[param] = entry
+        entry_fields[display_name] = entry
 
     # Save ve Cancel butonları
-    tk.Button(root, text="Save", command=save).grid(row=len(default_params), column=0, pady=10)
-    tk.Button(root, text="Cancel", command=cancel).grid(row=len(default_params), column=1, pady=10)
+    tk.Button(root, text="Save", command=save).grid(row=len(default_params) + 2, column=0, pady=10)
+    tk.Button(root, text="Cancel", command=cancel).grid(row=len(default_params) + 2, column=1, pady=10)
 
     root.mainloop()
 
-    return params
+    # Cancel butonuna basılmışsa direkt None döndür
+    if params is None:
+        return None
+
+    # Parametre isimlerini orijinal snake_case'e geri döndür
+    final_params = {}
+    for snake_name in default_params.keys():
+        pascal_name = snake_to_pascal(snake_name)
+        final_params[snake_name] = params.get(pascal_name, default_params[snake_name])
+
+    return final_params
+
 
 while running:
     x, y = win.get_size()
@@ -362,19 +402,23 @@ while running:
         if event.type == pygame.MOUSEMOTION and dragging_effect:
             dragging_pos = pos
 
-        # Sürükleme bırakıldığında track'e efekti uygula
         if event.type == pygame.MOUSEBUTTONUP and dragging_effect:
+            # Mouse'un bırakıldığı konumu al
             for track_idx, trackRect in enumerate(TrackRectList):
-                if trackRect.rect.collidepoint(pos):  # Hangi track'e bırakıldığını kontrol et
+                if trackRect.rect.collidepoint(pos):  # Bırakılan yer track üzerinde mi?
                     effect_name = dragging_effect["effect"]
-                    effect_params = dragging_effect["params"]
+                    default_params = dragging_effect["params"]
 
-                    if audio_manager.tracks[track_idx] is not None:
-                        # Dinamik olarak efekt fonksiyonunu çağır
-                        effect_function = getattr(audio_manager, effect_name)
-                        audio_manager.tracks[track_idx] = effect_function(audio_manager.tracks[track_idx], **effect_params)
-
-            dragging_effect = None  # Sürükleme işlemini sıfırla
+                    # Popup aç ve kullanıcıdan parametreleri al
+                    user_params = show_effect_params(effect_name, default_params)
+                    
+                    if user_params:  # Eğer parametre girişi varsa
+                        if audio_manager.tracks[track_idx] is not None:
+                            effect_function = getattr(audio_manager, effect_name)
+                            audio_manager.tracks[track_idx] = effect_function(
+                                audio_manager.tracks[track_idx], **user_params
+                            )
+            dragging_effect = None
 
     wincolor = theme[4]
     win.fill(wincolor)
